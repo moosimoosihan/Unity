@@ -18,7 +18,7 @@ public class EnemyMove : MonoBehaviour
     Vector3 dir;
     SpriteRenderer spriteRenderer;
     public PlayerMove playerLogic;
-    bool isNuckBack;
+
     //화염
     public bool isFire; //불에 붙었는가?
     float fireOffCount;
@@ -52,6 +52,15 @@ public class EnemyMove : MonoBehaviour
 
     //물리
     float noneDamageTextTime;
+    
+    //빛
+    float lightDamageTextTime;
+
+    //독
+    float poisonCount;
+    float poisonDamageTextTime;
+    bool isPoison;
+    float poisonDamage;
 
     Rigidbody2D rigid;
     Animator anim;
@@ -84,23 +93,23 @@ public class EnemyMove : MonoBehaviour
         enemyStateClear();
         switch(enemyName){
             case "EnemyA":
-                enemyLife = 80*stage;
-                speed = 1.1f + (stage*0.1f);
+                enemyLife = 40*stage;
+                speed = 1f + (stage*0.1f);
                 power = 20*stage;
                 break;
             case "EnemyB":
-                enemyLife = 500*stage;
-                speed = 1.4f + (stage*0.1f);
+                enemyLife = 200*stage;
+                speed = 1f + (stage*0.1f);
                 power = 30*stage;
                 break;
             case "EnemyC":
-                enemyLife = 4000*stage;
-                speed = 1.4f + (stage*0.1f);
+                enemyLife = 500*stage;
+                speed = 1.1f + (stage*0.1f);
                 power = 50*stage;
                 break;
             case "EnemyD":
-                enemyLife = 10000*stage;
-                speed = 1.7f + (stage*0.1f);
+                enemyLife = 20000*stage;
+                speed = 1.3f + (stage*0.1f);
                 power = 80*stage;
                 break;
             case "Box":
@@ -108,7 +117,7 @@ public class EnemyMove : MonoBehaviour
                 break;
             case "EnemyE":
                 enemyLife = 50000*stage;
-                speed = 1.9f + (stage*0.1f);
+                speed = 1.4f + (stage*0.1f);
                 power = 100*stage;
                 Invoke("Think", 5);
                 break;
@@ -129,9 +138,6 @@ public class EnemyMove : MonoBehaviour
             return;
 
         if(enemyLife<=0)
-            return;
-
-        if(isNuckBack)
             return;
 
         Move();
@@ -182,13 +188,13 @@ public class EnemyMove : MonoBehaviour
 
             } else if(bullet.elementalType == "Fire"){ // 불 데미지
                 if(enemyName=="Box"){
-                    OnHit(transform.position, 1, 0, 0, bullet.elementalType);
+                    OnHit(transform.position, 1, bullet.elementalType);
                 }
-                OnHit(transform.position, bullet.power, 0, 0, bullet.elementalType);
+                OnHit(transform.position, bullet.power, bullet.elementalType);
                 IsFrie(bullet);
 
             } else if(bullet.elementalType == "Stone") {// 바위 데미지
-                OnHit(transform.position, bullet.power, bullet.nuckBack, bullet.nuckBackTime, bullet.elementalType);
+                OnHit(transform.position, bullet.power, bullet.elementalType);
 
                 //보호막
                 StoneShield();
@@ -198,7 +204,14 @@ public class EnemyMove : MonoBehaviour
 
             } else if(bullet.elementalType == "Water") {//물
                 IsWater(bullet);
-
+                if(bullet.weaponType == 22){ // 2파동의 경우 2번의 데미지
+                    Vector2 pos = new Vector2(transform.position.x+0.1f,transform.position.y+0.1f);
+                    if(bullet.maxLevel){
+                        IsIce(bullet);
+                    } else {
+                        OnHit(pos, bullet.power,  "None");
+                    }
+                }
             } else if(bullet.elementalType == "Lightning"){
                 IsLightning(bullet);
 
@@ -206,28 +219,33 @@ public class EnemyMove : MonoBehaviour
                 if(bullet.armorKill && (enemyName != "EnemyD" || enemyName != "EnemyE")){ // 보스가 아닐경우 5% 확률로 즉사
                     int ran = Random.Range(0,100);
                     if(ran>94){
-                        OnHit(transform.position, enemyMaxLife, bullet.nuckBack, bullet.nuckBackTime, "None");
+                        OnHit(transform.position, enemyMaxLife,  "None");
                         gameManager.StateText(transform.position, "InDeath");
-                        noneDamageTextTime = 0;
                     } else {
-                        OnHit(transform.position, bullet.power, bullet.nuckBack, bullet.nuckBackTime, "None");
-                        noneDamageTextTime = 0;
+                        OnHit(transform.position, bullet.power,  "None");
                     }
                 } else {
-                    OnHit(transform.position, bullet.power, bullet.nuckBack, bullet.nuckBackTime, "None");
-                    noneDamageTextTime = 0;
+                    OnHit(transform.position, bullet.power,  "None");
                 }
+            } else if(bullet.elementalType == "Light"){ // 빛 데미지
+                OnHit(transform.position, bullet.power,  "Light");
+                playerLogic.Healing(bullet.power/100);
+            } else if(bullet.elementalType == "Poison"){ // 독 데미지
+                poisonCount = 3f;
+                poisonDamage = bullet.power;
+                OnHit(transform.position, bullet.power,  "Poison");
+                isPoison = true;
             } else { // 노멀데미지
-                OnHit(other.transform.position, bullet.power, bullet.nuckBack, bullet.nuckBackTime, "None");
+                OnHit(other.transform.position, bullet.power,  "None");
             }
             //닿으면 사라지는 총알은 사라져라
-            if(bullet.weaponType > 2 && bullet.weaponType < 6 || bullet.weaponType == 11 || bullet.weaponType == 7){
+            if(bullet.weaponType > 2 && bullet.weaponType < 6 || bullet.weaponType == 11 || bullet.weaponType == 7 || bullet.weaponType == 22 || bullet.weaponType == 29){
                 other.gameObject.SetActive(false);
             }
         } else if(other.gameObject.tag == "Effect"){ //과부화 폭발 데미지
             Effect effect = other.GetComponent<Effect>();
             if(effect.effectName == "Overload"){
-                OnHit(transform.position, effect.power, 2, 0.2f, "Fire");
+                OnHit(transform.position, effect.power, "Fire");
             }
         } else if (other.gameObject.tag == "BorderBullet"){
             if(enemyName != "EnemyE"){
@@ -252,31 +270,41 @@ public class EnemyMove : MonoBehaviour
                     windDamageTextTime = 0;
                 }
             } else if (bullet.elementalType == "None"){
-                noneDamageTextTime += Time.deltaTime;
-                if(noneDamageTextTime >= 1){
-                    if(bullet.weaponType == 15){ // 가시 갑옷
+                if(bullet.weaponType == 15){ // 가시 갑옷
+                    noneDamageTextTime += Time.deltaTime;
+                    if(noneDamageTextTime >= 1){
                         if(bullet.armorKill && (enemyName != "EnemyD" || enemyName != "EnemyE")){ // 보스가 아닐경우 5% 확률로 즉사
                             int ran = Random.Range(0,100);
                             if(ran>94){
-                                OnHit(transform.position, enemyMaxLife, bullet.nuckBack, bullet.nuckBackTime, "None");
+                                OnHit(transform.position, enemyMaxLife,  "None");
                                 gameManager.StateText(transform.position, "InDeath");
                                 noneDamageTextTime = 0;
                             } else {
-                                OnHit(transform.position, bullet.power, bullet.nuckBack, bullet.nuckBackTime, "None");
+                                OnHit(transform.position, bullet.power,  "None");
                                 noneDamageTextTime = 0;
                             }
+                        } else {
+                            OnHit(transform.position, bullet.power,  "None");
+                            noneDamageTextTime = 0;
                         }
-                    } else {
-                        OnHit(transform.position, bullet.power, bullet.nuckBack, bullet.nuckBackTime, "None");
-                        noneDamageTextTime = 0;
                     }
-                    
                 }
+            } else if (bullet.elementalType == "Light"){ // 빛 데미지
+                lightDamageTextTime += Time.deltaTime;
+                if(lightDamageTextTime >= 1){
+                    OnHit(transform.position, bullet.power,  "Light");
+                    lightDamageTextTime = 0;
+                    playerLogic.Healing(bullet.power/100);
+                }
+            } else if (bullet.elementalType == "Poison"){ // 독 데미지
+                poisonCount = 3f;
+                poisonDamage = bullet.power;
+                isPoison = true;
             }
         }
     }
     //초전도 함수
-    public void isSuperconductivity(float power, float nuckBack, float nuckBackTime, string type)
+    public void isSuperconductivity(float power, string type)
     {
         isLightning = false;
         lightningOffCount = 0;
@@ -284,7 +312,7 @@ public class EnemyMove : MonoBehaviour
         iceOffCount = 0;
         Vector3 plusPos = new Vector3(0,0.1f,0);
         gameManager.StateText(transform.position, "Superconductivity");
-        OnHit(transform.position, power * 1.5f, nuckBack, nuckBackTime, type);
+        OnHit(transform.position, power * 1.5f,  type);
     }
     //과부화 함수
     public void isOverload(string type)
@@ -301,7 +329,7 @@ public class EnemyMove : MonoBehaviour
         gameManager.StateText(transform.position, "Overload");
     }
     //융해 함수
-    void isMelting(float power, float nuckBack, float nuckBackTime, string type)
+    void isMelting(float power, string type)
     {
         isIce = false;
         iceOffCount = 0;
@@ -309,7 +337,7 @@ public class EnemyMove : MonoBehaviour
         fireOffCount = 0;
         Vector3 plusPos = new Vector3(0,0.1f,0);
         gameManager.StateText(transform.position, "Melting");
-        OnHit(transform.position, power * 1.5f, nuckBack, nuckBackTime, type);
+        OnHit(transform.position, power * 1.5f,  type);
     }
     //빙결 함수
     void isFreezing()
@@ -339,7 +367,7 @@ public class EnemyMove : MonoBehaviour
         }
     }
     //증발 함수
-    void isEvaporation(float power, float nuckBack, float nuckBackTime, string type)
+    void isEvaporation(float power, string type)
     {
         isFire = false;
         fireOffCount = 0;
@@ -347,7 +375,7 @@ public class EnemyMove : MonoBehaviour
         waterOffCount = 0;
         Vector3 plusPos = new Vector3(0,0.1f,0);
         gameManager.StateText(transform.position, "Evaporation");
-        OnHit(transform.position, power * 1.5f, nuckBack, nuckBackTime, type);
+        OnHit(transform.position, power * 1.5f,  type);
     }
 
     //감전 함수
@@ -381,7 +409,7 @@ public class EnemyMove : MonoBehaviour
                 lightningStop = 0;
             }
             if(ElectricShockDamageTextTime >= 1){
-                OnHit(transform.position, lightningDamage, 0, 0, "Lightning");
+                OnHit(transform.position, lightningDamage, "Lightning");
                 ElectricShockDamageTextTime = 0;
             }
         }
@@ -402,11 +430,30 @@ public class EnemyMove : MonoBehaviour
             fireDamageTextTime += Time.deltaTime;
 
             if(fireDamageTextTime >= 1){
-                OnHit(transform.position, fireDamage, 0, 0, "Fire");
+                OnHit(transform.position, fireDamage, "Fire");
                 fireDamageTextTime = 0;
             }
+        }   
+    }
+    // 독에 맞은경우 초당 독 데미지
+    void EnemyPoisonDamaged()
+    {
+        if(isPoison){
+            if(poisonCount<=0){
+                spriteRenderer.color = new Color(1,1,1);
+                isPoison = false;
+                return;
+            }
+
+            spriteRenderer.color = new Color(0,0.5f,0);
+            poisonCount -= Time.deltaTime;
+            poisonDamageTextTime += Time.deltaTime;
+
+            if(poisonDamageTextTime>= 1){
+                OnHit(transform.position, poisonDamage,  "Poison");
+                poisonDamageTextTime = 0;
+            }
         }
-        
     }
     //얼음에 맞을 경우 이동속도가 느려진다.
     void EnemyIceSlow()
@@ -439,7 +486,7 @@ public class EnemyMove : MonoBehaviour
             lightingDamageTextTime += Time.deltaTime;
 
             if(lightingDamageTextTime >= 1){
-                OnHit(transform.position, lightningDamage * 0.5f, 0, 0, "Lightning");
+                OnHit(transform.position, lightningDamage * 0.5f, "Lightning");
                 lightingDamageTextTime = 0;
             }
         }
@@ -459,7 +506,7 @@ public class EnemyMove : MonoBehaviour
         }
     }
     //총알의 맞은 경우
-    public void OnHit(Vector3 pos,float dmg, float nuckBack, float nuckBackTime, string type)
+    public void OnHit(Vector3 pos,float dmg, string type)
     {
         if(type == "Fire" || type == "None" || type == "Lightning" || type == "Stone"){
             freezingOffCount = 0;
@@ -496,42 +543,8 @@ public class EnemyMove : MonoBehaviour
                 gameManager.bossHealthBar.SetActive(false);
                 gameManager.StageEnd();
             }
-        } else {
-            if(enemyName == "EnemyE")
-                return;
-
-            //넉백
-            isNuckBack = true;
-            if(player.transform.position.x > transform.position.x && player.transform.position.y < transform.position.y){// 플레이어보다 왼쪽 위에 있을 경우
-                rigid.AddForce(Vector2.up * nuckBack, ForceMode2D.Impulse);
-                rigid.AddForce(Vector2.left * nuckBack, ForceMode2D.Impulse);
-            } else if (player.transform.position.x == transform.position.x && player.transform.position.y < transform.position.y){// 플레이 바로 위에 있을 경우
-                rigid.AddForce(Vector2.up * nuckBack, ForceMode2D.Impulse);
-            } else if(player.transform.position.x < transform.position.x && player.transform.position.y < transform.position.y){// 플레이어보다 오른쪽 위에 있을 경우
-                rigid.AddForce(Vector2.up * nuckBack, ForceMode2D.Impulse);
-                rigid.AddForce(Vector2.right * nuckBack, ForceMode2D.Impulse);
-            } else if(player.transform.position.x > transform.position.x && player.transform.position.y == transform.position.y){// 플레이어 바로 왼쪽에 있을 경우
-                rigid.AddForce(Vector2.left * nuckBack, ForceMode2D.Impulse);
-            } else if (player.transform.position.x < transform.position.x && player.transform.position.y == transform.position.y){// 플레이 바로 오른쪽에 있을 경우
-                rigid.AddForce(Vector2.right * nuckBack, ForceMode2D.Impulse);
-            } else if(player.transform.position.x > transform.position.x && player.transform.position.y > transform.position.y){// 플레이어보다 왼쪽 아래에 있을 경우
-                rigid.AddForce(Vector2.down * nuckBack, ForceMode2D.Impulse);
-                rigid.AddForce(Vector2.left * nuckBack, ForceMode2D.Impulse);
-            } else if(player.transform.position.x == transform.position.x && player.transform.position.y > transform.position.y){// 플레이어바로 아래에 있을 경우
-                rigid.AddForce(Vector2.down * nuckBack, ForceMode2D.Impulse);
-            } else if(player.transform.position.x < transform.position.x && player.transform.position.y > transform.position.y){// 플레이어보다 오른쪽 아래에 있을 경우
-                rigid.AddForce(Vector2.down * nuckBack, ForceMode2D.Impulse);
-                rigid.AddForce(Vector2.right * nuckBack, ForceMode2D.Impulse);
-            }
-            Invoke("NuckBackOff",nuckBackTime);
         }
     }
-
-    void NuckBackOff()
-    {
-        isNuckBack = false;
-    }
-
     //아이템 드롭
     void ItemDrop(string type)
     {
@@ -595,6 +608,8 @@ public class EnemyMove : MonoBehaviour
     //적군 스탯 초기화 함수
     void enemyStateClear()
     {
+        isPoison = false;
+        poisonCount = 0;
         isFire = false;
         fireOffCount = 0;
         isIce = false;
@@ -670,6 +685,7 @@ public class EnemyMove : MonoBehaviour
     }
     void EnemyState()
     {
+        EnemyPoisonDamaged();
         EnemyFireDamaged();
         EnemyIceSlow();
         EnemeyLightning();
@@ -795,12 +811,12 @@ public class EnemyMove : MonoBehaviour
             fireOffCount = 3f;
                     
             if(isIce){//융해
-                isMelting(bullet.power, bullet.nuckBack, bullet.nuckBackTime, bullet.elementalType);
+                isMelting(bullet.power, bullet.elementalType);
             } else if(isLightning){//과부화
                 lightningDamage = bullet.power;
                 isOverload(bullet.elementalType);
             } else if(isWater){// 증발
-                isEvaporation(bullet.power, bullet.nuckBack, bullet.nuckBackTime, bullet.elementalType);
+                isEvaporation(bullet.power, bullet.elementalType);
             }
             return;
         }
@@ -810,23 +826,23 @@ public class EnemyMove : MonoBehaviour
         fireOffCount = 3f;
         fireDamage = bullet.power;
         if(isIce){// 융해
-            isMelting(bullet.power, bullet.nuckBack, bullet.nuckBackTime, bullet.elementalType);
+            isMelting(bullet.power,  bullet.elementalType);
         } else if(isLightning){//과부화
             fireDamage = bullet.power;
             isOverload(bullet.elementalType);
         } else if(isWater){// 증발
-            isEvaporation(bullet.power, bullet.nuckBack, bullet.nuckBackTime, bullet.elementalType);
+            isEvaporation(bullet.power,  bullet.elementalType);
         }
     }
     public void IsIce(Bullet bullet)
     {
-        OnHit(transform.position, bullet.power, bullet.nuckBack, bullet.nuckBackTime, bullet.elementalType);
+        OnHit(transform.position, bullet.power,  bullet.elementalType);
         if(isIce){
             iceOffCount = 3f;
             if(isFire){// 융해
-                isMelting(bullet.power, bullet.nuckBack, bullet.nuckBackTime, bullet.elementalType);
+                isMelting(bullet.power,  bullet.elementalType);
             } else if(isLightning){// 초전도
-                isSuperconductivity(bullet.power, bullet.nuckBack, bullet.nuckBackTime, bullet.elementalType);
+                isSuperconductivity(bullet.power,  bullet.elementalType);
             } else if(isWater) {// 프리즈
                 isFreezing();
             }
@@ -836,9 +852,9 @@ public class EnemyMove : MonoBehaviour
             iceDamage = bullet.power;
             iceOffCount = 3f;
             if(isFire){// 융해
-                isMelting(bullet.power, bullet.nuckBack, bullet.nuckBackTime, bullet.elementalType);
+                isMelting(bullet.power,  bullet.elementalType);
             } else if(isLightning){//초전도
-                isSuperconductivity(bullet.power, bullet.nuckBack, bullet.nuckBackTime, bullet.elementalType);
+                isSuperconductivity(bullet.power,  bullet.elementalType);
             } else if(isWater) {// 프리즈
                 isFreezing();
             }
@@ -849,11 +865,11 @@ public class EnemyMove : MonoBehaviour
         lightningOffCount = 3f;
         isLightning = true;
         lightningDamage = bullet.power;
-        OnHit(transform.position, bullet.power, bullet.nuckBack, bullet.nuckBackTime, bullet.elementalType);
+        OnHit(transform.position, bullet.power,  bullet.elementalType);
         if(isFire){ // 불이 붙었다면 과부화
             isOverload("Overload");
         } else if (isIce){ // 얼음이 붙었다면 초전도
-            isSuperconductivity(bullet.power, bullet.nuckBack, bullet.nuckBackTime, "Superconductivity");
+            isSuperconductivity(bullet.power,  "Superconductivity");
         } else if (isWater){ // 물이 묻었다면 감전
             isElectricShock();
         }
@@ -863,30 +879,30 @@ public class EnemyMove : MonoBehaviour
         if(isFire){//불이 붙어 있다면
             Vector3 plusPos = new Vector3(0,0.1f,0);
             gameManager.StateText(transform.position, "Diffusion");
-            OnHit(transform.position, bullet.power, bullet.nuckBack, bullet.nuckBackTime, bullet.elementalType);
-            OnHit(transform.position + plusPos, fireDamage, 0, 0, "Fire");
+            OnHit(transform.position, bullet.power,  bullet.elementalType);
+            OnHit(transform.position + plusPos, fireDamage, "Fire");
         } else if(isIce) {//얼음이 뭍어 있다면
             Vector3 plusPos = new Vector3(0,0.1f,0);
             gameManager.StateText(transform.position, "Diffusion");
-            OnHit(transform.position, bullet.power, bullet.nuckBack, bullet.nuckBackTime, bullet.elementalType);
-            OnHit(transform.position + plusPos, iceDamage, 0, 0, "Ice");
+            OnHit(transform.position, bullet.power,  bullet.elementalType);
+            OnHit(transform.position + plusPos, iceDamage, "Ice");
         } else if(isLightning) {//전기가 뭍어 있다면
             Vector3 plusPos = new Vector3(0,0.1f,0);
             gameManager.StateText(transform.position, "Diffusion");
-            OnHit(transform.position, bullet.power, bullet.nuckBack, bullet.nuckBackTime, bullet.elementalType);
-            OnHit(transform.position + plusPos, lightningDamage, 0, 0, "Lightning");
+            OnHit(transform.position, bullet.power,  bullet.elementalType);
+            OnHit(transform.position + plusPos, lightningDamage, "Lightning");
         } else if(isWater) {//물이 붙어 있다면
             Vector3 plusPos = new Vector3(0,0.1f,0);
             gameManager.StateText(transform.position, "Diffusion");
-            OnHit(transform.position, bullet.power, bullet.nuckBack, bullet.nuckBackTime, bullet.elementalType);
-            OnHit(transform.position + plusPos, waterDamage, 0, 0, "Water");
+            OnHit(transform.position, bullet.power,  bullet.elementalType);
+            OnHit(transform.position + plusPos, waterDamage, "Water");
         } else {
-            OnHit(transform.position, bullet.power, bullet.nuckBack, bullet.nuckBackTime, bullet.elementalType);
+            OnHit(transform.position, bullet.power,  bullet.elementalType);
         }
     }
     public void IsWater(Bullet bullet)
     {
-        OnHit(transform.position, bullet.power, bullet.nuckBack, bullet.nuckBackTime, bullet.elementalType);
+        OnHit(transform.position, bullet.power,  bullet.elementalType);
         isWater = true;
         waterOffCount = 3f;
         if(isIce){
@@ -894,7 +910,7 @@ public class EnemyMove : MonoBehaviour
         } else if(isLightning){
             isElectricShock();
         } else if(isFire){
-            isEvaporation(bullet.power,bullet.nuckBack,bullet.nuckBackTime,bullet.elementalType);
+            isEvaporation(bullet.power,bullet.elementalType);
         }
     }
     void StoneShield()

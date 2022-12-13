@@ -12,7 +12,7 @@ public class BottomBanner : MonoBehaviour
         // Initialize the Google Mobile Ads SDK.
         MobileAds.Initialize(initStatus => { });
 
-        this.RequestBanner();
+        RequestBanner();
     }
 
     private void RequestBanner()
@@ -29,14 +29,14 @@ public class BottomBanner : MonoBehaviour
         #endif
 
         // Clean up banner ad before creating a new one.
-        if (this.bannerView != null)
+        if (bannerView != null)
         {
-            this.bannerView.Destroy();
+            bannerView.Destroy();
         }
 
         AdSize adaptiveSize = AdSize.GetCurrentOrientationAnchoredAdaptiveBannerAdSizeWithWidth(AdSize.FullWidth);
 
-        this.bannerView = new BannerView(adUnitId, adaptiveSize, AdPosition.Bottom);
+        bannerView = new BannerView(adUnitId, adaptiveSize, AdPosition.Bottom);
         
         // Create an empty ad request.
         AdRequest request = new AdRequest.Builder().Build();

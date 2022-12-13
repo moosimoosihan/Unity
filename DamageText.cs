@@ -44,6 +44,10 @@ public class DamageText : MonoBehaviour
             damageText.color = new Color(0.3f,0.7f,0.8f);
         } else if (type == "Healing"){
             damageText.color = new Color(0,1,0);
+        } else if (type == "Light"){
+            damageText.color = new Color(1,0.8f,0);
+        } else if (type == "Poison"){
+            damageText.color = new Color(0,0.5f,0);
         }
         
         damageText.text = string.Format("{0:n0}", dmg); //000,000 으로 출력
