@@ -21,14 +21,14 @@ public class EnemyMove : MonoBehaviour
 
     //화염
     public bool isFire; //불에 붙었는가?
-    float fireOffCount;
-    float fireDamage;
+    public float fireOffCount;
+    public float fireDamage;
     float fireDamageTextTime;
     //얼음
     public bool isIce; // 얼음 상태인가? (빙결 x)
-    float iceOffCount = 3f;
+    public float iceOffCount = 3f;
     float iceSlow = 1f;
-    float iceDamage;
+    public float iceDamage;
     public bool isFreezingOn;
     float freezingOffCount = 3f;
     int freezStop = 1;
@@ -43,9 +43,9 @@ public class EnemyMove : MonoBehaviour
     int lightningStop = 1;
     //물
     public bool isWater;
-    float waterDamage;
+    public float waterDamage;
     float waterDamageTextTime;
-    float waterOffCount;
+    public float waterOffCount;
 
     //바람
     float windDamageTextTime;
@@ -111,6 +111,7 @@ public class EnemyMove : MonoBehaviour
                 enemyLife = 20000*stage;
                 speed = 1.3f + (stage*0.1f);
                 power = 80*stage;
+                Invoke("Think", 5);
                 break;
             case "Box":
                 enemyLife = 1;
@@ -127,7 +128,7 @@ public class EnemyMove : MonoBehaviour
     void Update()
     {
         //보스라면 체력을 표기해라
-        if(enemyName == "EnemyE" && gameObject.activeSelf){
+        if((enemyName =="EnemyD" ||enemyName == "EnemyE") && gameObject.activeSelf){
             gameManager.bossHealth.fillAmount =  enemyLife / enemyMaxLife;
             Move();
             EnemyState();
@@ -201,15 +202,37 @@ public class EnemyMove : MonoBehaviour
 
             } else if(bullet.elementalType == "Ice"){ // 얼음 데미지
                 IsIce(bullet);
-
             } else if(bullet.elementalType == "Water") {//물
                 IsWater(bullet);
                 if(bullet.weaponType == 22){ // 2파동의 경우 2번의 데미지
                     Vector2 pos = new Vector2(transform.position.x+0.1f,transform.position.y+0.1f);
                     if(bullet.maxLevel){
-                        IsIce(bullet);
+                        bullet.elementalType = "Ice";
+                        OnHit(pos, bullet.power,  bullet.elementalType);
+                        if(isIce){
+                            iceOffCount = 3f;
+                            if(isFire){// 융해
+                                isMelting(bullet.power,  bullet.elementalType);
+                            } else if(isLightning){// 초전도
+                                isSuperconductivity(bullet.power,  bullet.elementalType);
+                            } else if(isWater) {// 프리즈
+                                isFreezing();
+                            }
+                        } else {
+                            // 얼음 이동속도 감소
+                            isIce = true;
+                            iceDamage = bullet.power;
+                            iceOffCount = 3f;
+                            if(isFire){// 융해
+                                isMelting(bullet.power,  bullet.elementalType);
+                            } else if(isLightning){//초전도
+                                isSuperconductivity(bullet.power,  bullet.elementalType);
+                            } else if(isWater) {// 프리즈
+                                isFreezing();
+                            }
+                        }
                     } else {
-                        OnHit(pos, bullet.power,  "None");
+                        OnHit(pos, bullet.power, "None");
                     }
                 }
             } else if(bullet.elementalType == "Lightning"){
@@ -239,7 +262,7 @@ public class EnemyMove : MonoBehaviour
                 OnHit(other.transform.position, bullet.power,  "None");
             }
             //닿으면 사라지는 총알은 사라져라
-            if(bullet.weaponType > 2 && bullet.weaponType < 6 || bullet.weaponType == 11 || bullet.weaponType == 7 || bullet.weaponType == 22 || bullet.weaponType == 29){
+            if(bullet.weaponType > 2 && bullet.weaponType < 6 || bullet.weaponType == 11 || bullet.weaponType == 22 || bullet.weaponType == 29){
                 other.gameObject.SetActive(false);
             }
         } else if(other.gameObject.tag == "Effect"){ //과부화 폭발 데미지
@@ -535,6 +558,13 @@ public class EnemyMove : MonoBehaviour
             }
             ItemDrop(enemyName);
             //보스를 잡았을 경우
+            if(enemyName == "EnemyD"){
+                CancelInvoke("FireShot");
+                CancelInvoke("FireAround");
+                CancelInvoke("FireArc");
+                gameManager.camAnim.SetBool("IsOn",false);
+                gameManager.bossHealthBar.SetActive(false);
+            }
             if(enemyName == "EnemyE"){
                 CancelInvoke("FireShot");
                 CancelInvoke("FireAround");

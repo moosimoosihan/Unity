@@ -116,7 +116,7 @@ public class MainManager : MonoBehaviour
                                     "Hunter2\nStart with double your health.\nDirectly collide with the enemy and fight back.",
                                     "Hunter3\nMovement speed is 20% faster.\nThrows all throwable objects at enemies.",
                                     "Hunter4\nDamage is increased double.\nSummons allies to fight."};
-            helpExText.text = "Wizards can use magic in various combinations.\nDamage varies depending on the combination of elements.\nElement Combination Table\nWind + Element = Spread\nYou will be hit once more by the damage of the currently attached element. .\nLightning + Fire = Overload\nAn explosion occurs, knocking back nearby enemies and dealing damage.\nLightning + Ice = Superconductivity\nDefense by 1.5x.\nIce + Water = Freezing\nEnemies are frozen. However, if you are hit with another element (fire, lightning, stone), the ice will break.\nWater + Electricity = Electrocution\nYou take damage per second and stop moving for a while.\nWater + Fire = Evaporation\n1.5 Takes double damage.\nFire + Ice = Melting\nInflicts 1.5 times the damage.\nWater = Enemies get wet.\nFire = Deals 100% damage per second to enemies. .\nIce = slows down the movement speed of enemy characters.\nElectricity = deals 50% damage per second to enemy characters.\nWind = pushes back enemies.\nStone = pushes back enemies and gives a certain chance of a shield item creates.\n\nHunter\nCan deal physical damage.\nEach character has unique stats.";
+            helpExText.text = "Wizards can use magic in various combinations.\nDamage varies depending on the combination of elements.\nElement Combination Table\nWind + Element = Spread\nYou will be hit once more by the damage of the currently attached element. .\nLightning + Fire = Overload\nAn explosion occurs, knocking back nearby enemies and dealing damage.\nLightning + Ice = Superconductivity\nDefense by 1.5x.\nIce + Water = Freezing\nEnemies are frozen. However, if you are hit with another element (fire, lightning, stone), the ice will break.\nWater + Electricity = Electrocution\nYou take damage per second and stop moving for a while.\nWater + Fire = Evaporation\n1.5 Takes double damage.\nFire + Ice = Melting\nInflicts 1.5 times the damage.\nWater = Enemies get wet.\nFire = Deals 100% damage per second to enemies. .\nIce = slows down the movement speed of enemy characters.\nElectricity = deals 50% damage per second to enemy characters.\nWind = pushes back enemies.\nStone = pushes back enemies and gives a certain chance of a shield item creates.\nLight = Recovers HP by a certain amount of damage.\n\nHunter\nCan deal physical damage.\nEach character has unique stats.";
         } else if(language == "Korean"){
             helpText[0].text = "도움";
             helpText[1].text = "도움말";
@@ -134,7 +134,7 @@ public class MainManager : MonoBehaviour
                                     "헌터2\n체력을 2배로 시작합니다.\n직접 적군과 부딪히며 맞서 싸웁니다.",
                                     "헌터3\n이동속도가 20% 더 빠릅니다.\n적군에게 던질 수 있는 모든 물체를 던집니다.",
                                     "헌터4\n데미지가 2배로 증가합니다.\n아군을 소환하여 싸웁니다."};
-            helpExText.text = "원소 조합 따라 변화 데미지가 일어납니다.\n원소조합표\n바람 + 원소 = 확산\n현재 붙어있는 원소의 데미지로 한번 더 피격됩니다.\n번개 + 불 = 과부화\n폭발이 일어나 주변 적군을 밀치고 데미지를 줍니다.\n번개 + 얼음 = 초전도\n데미지를 1.5배 줍니다.\n얼음 + 물 = 빙결\n적군이 얼어붙습니다. 하지만 다른 원소(불, 번개, 돌)로 피격시 빙결이 풀려버립니다.\n물 + 전기 = 감전\n초당 데미지를 입고 잠시 이동을 멈춥니다.\n물 + 불 = 증발\n1.5배의 데미지가 들어갑니다.\n불 + 얼음 = 융해\n1.5배의 데미지가 들어갑니다.\n물 = 적군 캐릭터가 축축하게 젖습니다.\n불 = 적군에게 초당 100% 데미지를 입힙니다.\n얼음 = 적군 캐릭터의 이동속도가 느려집니다.\n전기 = 적군 캐릭터에게 초당 50% 데미지를 입힙니다.\n바람 = 적군을 밀어냅니다.\n돌 = 적군을 밀치고 특정 확률로 방어막 아이템을 생성합니다.\n\n캐릭터마다 고유 능력치가 있습니다.";
+            helpExText.text = "원소 조합 따라 변화 데미지가 일어납니다.\n원소조합표\n바람 + 원소 = 확산\n현재 붙어있는 원소의 데미지로 한번 더 피격됩니다.\n번개 + 불 = 과부화\n폭발이 일어나 주변 적군을 밀치고 데미지를 줍니다.\n번개 + 얼음 = 초전도\n데미지를 1.5배 줍니다.\n얼음 + 물 = 빙결\n적군이 얼어붙습니다. 하지만 다른 원소(불, 번개, 돌)로 피격시 빙결이 풀려버립니다.\n물 + 전기 = 감전\n초당 데미지를 입고 잠시 이동을 멈춥니다.\n물 + 불 = 증발\n1.5배의 데미지가 들어갑니다.\n불 + 얼음 = 융해\n1.5배의 데미지가 들어갑니다.\n물 = 적군 캐릭터가 축축하게 젖습니다.\n불 = 적군에게 초당 100% 데미지를 입힙니다.\n얼음 = 적군 캐릭터의 이동속도가 느려집니다.\n전기 = 적군 캐릭터에게 초당 50% 데미지를 입힙니다.\n바람 = 적군을 밀어냅니다.\n돌 = 적군을 밀치고 특정 확률로 방어막 아이템을 생성합니다.\n빛 = 일정 데미지 만큼 체력을 회복합니다.\n\n캐릭터마다 고유 능력치가 있습니다.";
         }
     }
     public void GameStartButton()
@@ -344,11 +344,14 @@ public class MainManager : MonoBehaviour
     //광고 함수
     private void RequestBanner()
     {
+        if(SceneManager.GetActiveScene().name == "PlayGame")
+            return;
+
         // 주의! 실행 전 꼭 테스트로 실행 할 것!
         // 테스트 ca-app-pub-3940256099942544/6300978111
         // 광고 ca-app-pub-4730748511418289/9025837610
         #if UNITY_ANDROID
-            string adUnitId = "ca-app-pub-3940256099942544/6300978111";
+            string adUnitId = "ca-app-pub-4730748511418289/9025837610";
         #elif UNITY_IPHONE
             string adUnitId = "ca-app-pub-3940256099942544/2934735716";
         #else

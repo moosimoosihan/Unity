@@ -47,6 +47,7 @@ public class GameManager : MonoBehaviour
     public int spawnIndex;
     public bool spawnEnd;
     public int stage;
+    bool Boss1;
 
     //UI 함수
     public Image expBar;
@@ -106,6 +107,7 @@ public class GameManager : MonoBehaviour
     //상자 함수
     bool isBoxOpen;
     int boxOpenCount;
+    float boxCreatTime;
 
 
     //저장 함수
@@ -165,10 +167,10 @@ public class GameManager : MonoBehaviour
                 weaponText = new string[]{"Pickaxe","Shovel","Trident","Machinegun","Shotgun","Pistor","Delay","Speed","Life","Power","Magnet","Critical"};
                 weaponExText = new string[,] {{"Throw the pickaxe up 2 Seconds.","2 Pickaxe\nDamageUp","3 Pickaxe\nDamageUp","4 Pickaxe\nDamageUp","5 Pickaxe\nDamageUp","Throws a huge pickaxe."},
                                             {"Throws a shovel under once 2 seconds.\nType None","2 shovels\nDamageUp","3 shovels\nDamageUp","4 shovels\nDamageUp","5 shovels\nDamageUp","The number of shovels doubles."},
-                                            {"Throws a piercing spear at an enemy every 2 seconds.\nType None","DamageUpScaleUp","DamageUp\nScaleUp","DamageUp\nScaleUp","DamageUp\nScaleUp","The trident goes back and forth."},
+                                            {"Throws a piercing spear at an enemy every 2 seconds.\nType None","DamageUpcaleUp","DamageUp\nScaleUp","DamageUp\nScaleUp","DamageUp\nScaleUp","The trident goes back and forth."},
                                             {"Use a Machinegun with less delay.\nType None","0.33 Seconds\nDamageUp","0.25 Seconds\nDamageUp","0.12 Seconds\nDamageUp","0.10 Seconds\nDamageUp","Bullets fire very quickly."},
                                             {"Bullets are fired spread.\n2 Bullet\nType None","3 Bullet\nDamageUp","4 Bullet\nDamageUp","5 Bullet\nDamageUp","6 Bullet\nDamageUp","Bullets spread evenly in all directions."},
-                                            {"Use a high-damage pistol.","DamageUp","DamageUp","DamageUp","DamageUp","Bullet size increases."},
+                                            {"Use a high-damage pistol.","DamageUp","DamageUp","DamageUp","DamageUp","Bullet size Up."},
 
                                             {"Delay 10%","Delay 20%","Delay 30%","Delay 40%","Delay 50%",""},
                                             {"Speed+20%","Speed+40%","Speed+60%","Speed+80%","Speed+100%",""},
@@ -189,14 +191,14 @@ public class GameManager : MonoBehaviour
                                             {"Haven't learned yet.","Power+10%","Power+20%","Power+30%","Power+40%","Power+50%",""},
                                             {"Haven't learned yet.","Mag Scale 200%","Mag Scale 275%","Mag Scale 325%","Mag Scale 375%","Mag Scale 450%",""},
                                             {"Haven't learned yet.","Critical Damage155%\nCritical Chance5%","Critical Damage160%\nCritical Chance10%","Critical Damage165%\nCritical Chance15%","Critical Damage170%\nCritical Chance20%","Critical Damage175%\nCritical Chance25%",""}};
-                                                        } else if( character == "Hunter2"){
-                weaponText = new string[]{"Thorn armor","Hammer","Mace","Knight","The Cross","Strike","Delay","Speed","Life","Power","Magnet","Critical"};
-                weaponExText = new string[,] {{"","","","","",""},
-                                            {"","","","","",""},
-                                            {"","","","","",""},
-                                            {"","","","","",""},
-                                            {"","","","","",""},
-                                            {"","","","","",""},
+                } else if( character == "Hunter2"){
+                weaponText = new string[]{"Barbed Armor", "Hammer", "Mace", "Shield Charge", "Light Cross", "Ascension","Delay","Speed","Life","Power","Magnet","Critical"};
+                weaponExText = new string[,] {{"Deals damage to nearby enemies.\nDamage Up according to the number of enemies killed\nType physical","Damage Up","Damage Up","Damage Up","Damage Up","Instant death with 5% chance \nExcluding bosses and elite monsters"},
+                                            {"Throws a spinning hammer.\nPhysical type","Up damage","Up damage","Up damage","Up damage","Throws hammers in both directions."},
+                                            {"Wields a mace.\nPhysical type","Up damage\nUp speed","Up damage\nUp speed","Up damage\nUp speed","Up damage\nUp speed"," Mace size Up."},
+                                            {"Momentarily movement speed Up and pushes nearby enemies.\nPhysical type","Up damage","Up damage","Up damage","Up damage","Pushes enemies further away."},
+                                            {"Emits light in the shape of a cross.\nType light","Damage up","Damage up","Damage up","Damage up","Cross turns."},
+                                            {"A beam of light descends from the sky.\nType Light","Up damage\nUp speed","Up damage\nUp speed","Up damage\nUp speed","Up damage\nUp speed" ,"Damage is greatly Up."},
 
                                             {"Delay 10%","Delay 20%","Delay 30%","Delay 40%","Delay 50%",""},
                                             {"Speed+20%","Speed+40%","Speed+60%","Speed+80%","Speed+100%",""},
@@ -204,12 +206,12 @@ public class GameManager : MonoBehaviour
                                             {"Power+10%","Power+20%","Power+30%","Power+40%","Power+50%",""},
                                             {"Mag ScaleUp","Mag ScaleUp","Mag ScaleUp","Mag ScaleUp","Mag ScaleUp",""},
                                             {"Critical Damage155%\nCritical Chance5%","Critical Damage160%\nCritical Chance10%","Critical Damage165%\nCritical Chance15%","Critical Damage170%\nCritical Chance20%","Critical Damage175%\nCritical Chance25%",""}};
-                pauseExText = new string[,] {{"","","","","","",""},
-                                            {"","","","","","",""},
-                                            {"","","","","","",""},
-                                            {"","","","","","",""},
-                                            {"","","","","","",""},
-                                            {"","","","","","",""},
+                pauseExText = new string[,] {{"Not learned yet.","Damage 30","Damage 60","Damage 90","Damage 120","Damage 150","Damage 180\nNormal monster instant kill chance 5%"},
+                                            {"Not learned yet.","Damage 50","Damage 80","Damage 120","Damage 150","Damage 180","Damage 250\nThe hammer fires in both directions."},
+                                            {"Not yet learned.","Damage 80\nSpeed 50%","Damage 160\nSpeed 100%","Damage 240\nSpeed 150%","Damage 320\nSpeed 200%","Damage 400\nSpeed 250%","Damage 500\nSpeed 250%\nSize Up"},
+                                            {"Not learned yet.","Damage 50","Damage 100","Damage 140","Damage 200","Damage 240","Damage 300\nKnockback Up."},
+                                            {"Not learned yet.","Damage 40","Damage 80","Damage 120","Damage 160","Damage 200","Damage 250\nThe cross rotates."},
+                                            {"Not yet learned.","Damage 30\nSpeed 20%","Damage 60\nSpeed 30%","Damage 90\nSpeed 50%","Damage 120\nSpeed 80%","Damage 150\nSpeed 100%","Damage 400\nSpeed 100%"},
                                             
                                             {"Haven't learned yet.","Delay 10%","Delay 20%","Delay 30%","Delay 40%","Delay 50%",""},
                                             {"Haven't learned yet.","Speed+20%","Speed+40%","Speed+60%","Speed+80%","Speed+100%",""},
@@ -218,13 +220,13 @@ public class GameManager : MonoBehaviour
                                             {"Haven't learned yet.","Mag Scale 200%","Mag Scale 275%","Mag Scale 325%","Mag Scale 375%","Mag Scale 450%",""},
                                             {"Haven't learned yet.","Critical Damage155%\nCritical Chance5%","Critical Damage160%\nCritical Chance10%","Critical Damage165%\nCritical Chance15%","Critical Damage170%\nCritical Chance20%","Critical Damage175%\nCritical Chance25%",""}};
             } else if( character == "Hunter3"){
-                                weaponText = new string[]{"Drill","Bouncy ball","toss at random","Land mine","Turret","Bow","Delay","Speed","Life","Power","Magnet","Critical"};
-                weaponExText = new string[,] {{"","","","","",""},
-                                            {"","","","","",""},
-                                            {"","","","","",""},
-                                            {"","","","","",""},
-                                            {"","","","","",""},
-                                            {"","","","","",""},
+                weaponText = new string[]{"Drill","Bouncy ball","toss at random","Land mine","Turret","Bow","Delay","Speed","Life","Power","Magnet","Critical"};
+                weaponExText = new string[,] {{"Shoots a wave of electrical damage every 5 seconds.\nType Electric","Up damage","Up damage","Up damage","Up damage","Shooted every 2 seconds.\nSurge A fire is created where it passes.\nAn additional type of fire"},
+                                            {"Shoots water and energy waves at the same time.\nType Water, Physical", "Damage up", "Damage up", "Damage up", "Damage up", "Physical damage turns into ice damage.\n nadditional type of ice"},
+                                            {"Uses skill randomly.\nType unknown","Damage Up\nnumber Up","Damage Up\nnumber Up","Damage Up\nnumber Up","Damage Up\nnumber Up" ,"Ultimate fires randomly."},
+                                            {"Places a mine in a random location every 3 seconds.\nType Electric","Up damage\nUp size","Up damage\nUp size","Up damage\nUp size","Up damage \nUp size","Places a mine every 1 sec."},
+                                            {"Install an attacking turret.\nType physical","Up damage","Up damage","Up damage","Up damage","The turret fires fire"},
+                                            {"Throws a bow every 2 seconds.\nPhysical type","Up damage\nUp hitting objects","Up damage\nUp hitting objects","Up damage\nUp hitting objects","Up damage\nStrikes Up entity","Up damage\nUp hit entity\nFires every second."},
 
                                             {"Delay 10%","Delay 20%","Delay 30%","Delay 40%","Delay 50%",""},
                                             {"Speed+20%","Speed+40%","Speed+60%","Speed+80%","Speed+100%",""},
@@ -232,12 +234,12 @@ public class GameManager : MonoBehaviour
                                             {"Power+10%","Power+20%","Power+30%","Power+40%","Power+50%",""},
                                             {"Mag ScaleUp","Mag ScaleUp","Mag ScaleUp","Mag ScaleUp","Mag ScaleUp",""},
                                             {"Critical Damage155%\nCritical Chance5%","Critical Damage160%\nCritical Chance10%","Critical Damage165%\nCritical Chance15%","Critical Damage170%\nCritical Chance20%","Critical Damage175%\nCritical Chance25%",""}};
-                pauseExText = new string[,] {{"","","","","","",""},
-                                            {"","","","","","",""},
-                                            {"","","","","","",""},
-                                            {"","","","","","",""},
-                                            {"","","","","","",""},
-                                            {"","","","","","",""},
+                pauseExText = new string[,] {{"Not learned yet.","Damage 60","Damage 100","Damage 140","Damage 180","Damage 220","Damage 300\nShoots every 2 seconds.\nCreates flames"} ,
+                                            {"Not learned yet.","Damage 20 x 2","Damage 40 x 2","Damage 60 x 2","Damage 80 x 2","Damage 100 x 2","Damage 150 x 2\n nAdditional type ice"},
+                                            {"Not learned yet.","Level 1 skill","Level 2 skill","Level 3 skill","Level 4 skill","Level 5 skill","Random ultimate skill "},
+                                            {"Not yet learned.","Damage 80\nSize 100%","Damage 160\nSize 110%","Damage 240\nSize 120%","Damage 320\nSize 130%","Damage 400\nSize 140%","Damage 480\nSize 150%\nGenerate every second"},
+                                            {"Not learned yet.","Damage 50\nSize 100%","Damage 100\nSize 110%","Damage 150\nSize 120%","Damage 200\nSize 130%","Damage 250\nSize 140%","Damage 300\nSize 150%\nAdditional type fire"},
+                                            {"Not learned yet.","Damage 50\n1 bounce","Damage 80\n2 bounces","Damage 120\n3 bounces","Damage 150\n4 bounces","Damage 200\n5 times Bounce","Damage 250\nBounce 10 times\nFire every 1 second"},
                                             
                                             {"Haven't learned yet.","Delay 10%","Delay 20%","Delay 30%","Delay 40%","Delay 50%",""},
                                             {"Haven't learned yet.","Speed+20%","Speed+40%","Speed+60%","Speed+80%","Speed+100%",""},
@@ -246,13 +248,13 @@ public class GameManager : MonoBehaviour
                                             {"Haven't learned yet.","Mag Scale 200%","Mag Scale 275%","Mag Scale 325%","Mag Scale 375%","Mag Scale 450%",""},
                                             {"Haven't learned yet.","Critical Damage155%\nCritical Chance5%","Critical Damage160%\nCritical Chance10%","Critical Damage165%\nCritical Chance15%","Critical Damage170%\nCritical Chance20%","Critical Damage175%\nCritical Chance25%",""}};
             } else if( character == "Hunter4"){
-                weaponText = new string[]{"Bear","Skull","Bird","Snake","Ice golem","Lake","Delay","Speed","Life","Power","Magnet","Critical"};
-                weaponExText = new string[,] {{"","","","","",""},
-                                            {"","","","","",""},
-                                            {"","","","","",""},
-                                            {"","","","","",""},
-                                            {"","","","","",""},
-                                            {"","","","","",""},
+                weaponText = new string[]{"Bear","Skull","Bird","Snake","Golem","Fountain","Delay","Speed","Life","Power","Magnet","Critical"};
+                weaponExText = new string[,] {{"Summons a slow but strong bear","Up damage\nUp bear health","Up damage\nUp bear health","Up damage\nUp bear health","Up damage\nUp bear health ","Increased damage\nIncreased bear health\nIncreased bear speed"},
+                                            {"Summons a skeleton.\nSummons infantry and archers with a 50% chance","Up damage\nUp skeleton health","Up damage\nUp skeleton health","Up damage\nUp skeleton health"," Increased damage\nIncreased skeleton health","Increased damage\nIncreased skeleton health\nIncreased attack speed"},
+                                            {"Summons a bird that provides air support.","Increased damage\nPasses 1 time","Up damage\nPasses 2 times","Up damage\nPasses 3 times","Up damage\nPasses 4 times"," Increased damage\nPasses 5 times\n2 flies."},
+                                            {"Summons a venomous snake.","Up damage\nUp size","Up damage\nUp size","Up damage\nUp size","Up damage\nUp size"," Up damage\nUp size\nDraws enemies"},
+                                            {"Summons 1 of Ice, Lightning, Fire, Earth, Water Golem","Up damage\nUp HP","Up damage\nUp HP","Up damage\nUp HP","Damage Increase\nIncrease stamina","Increase damage\nIncrease stamina\nFire elemental skills"},
+                                            {"Summons a fountain.\nRecovers allies' HP every 5 seconds.","Up damage","Up damage","Up damage","Up damage","Up damage\nAttacks faster. "},
 
                                             {"Delay 10%","Delay 20%","Delay 30%","Delay 40%","Delay 50%",""},
                                             {"Speed+20%","Speed+40%","Speed+60%","Speed+80%","Speed+100%",""},
@@ -260,12 +262,12 @@ public class GameManager : MonoBehaviour
                                             {"Power+10%","Power+20%","Power+30%","Power+40%","Power+50%",""},
                                             {"Mag ScaleUp","Mag ScaleUp","Mag ScaleUp","Mag ScaleUp","Mag ScaleUp",""},
                                             {"Critical Damage155%\nCritical Chance5%","Critical Damage160%\nCritical Chance10%","Critical Damage165%\nCritical Chance15%","Critical Damage170%\nCritical Chance20%","Critical Damage175%\nCritical Chance25%",""}};
-                pauseExText = new string[,] {{"","","","","","",""},
-                                            {"","","","","","",""},
-                                            {"","","","","","",""},
-                                            {"","","","","","",""},
-                                            {"","","","","","",""},
-                                            {"","","","","","",""},
+                pauseExText = new string[,] {{"Not learned yet.","Damage 60\nHP 600","Damage 120\nHP 1200","Damage 180\nHP 1800","Damage 240\nHP 2400","Damage 300\nHP 3000","Damage 360\nHP 5000\nMovement speed increase and attack knockback effect"},
+                                            {"Not learned yet.","Damage 20\nHP 400\n1 skeleton soldier","Damage 40\nHP 800\n2 skeleton soldiers","Damage 80\nHP 1600\n3 skeleton soldiers", "Damage 100\nHP 2400\n4 Skeleton Soldiers","Damage 120\nHP 3200\n5 Skeleton Soldiers","Damage 150\nHP 4000\n5 Skeleton Soldiers\nAttack Speed ​​Increase"},
+                                            {"Not yet learned.","Damage 80\nPasses 0 times","Damage 120\nPasses 1 time","Damage 150\nPasses 2 times","Damage 180\nPasses 3 times","Damage 210\nPasses 4 times Pass","Damage 250\nPass 5 times\nAttack 2 enemies"},
+                                            {"Not learned yet.","Damage 30\nSize 80%","Damage 60\nSize 100%","Damage 90\nSize 120%","Damage 120\nSize 140%","Damage 150\nSize 160%","Damage 180\nSize 80%\nPulls enemies"},
+                                            {"Not learned yet.","Damage 40\nHP 500","Damage 80\nHP 1000","Damage 120\nHP 1500","Damage 160\nHP 2000","Damage 200\nHP 2500","Damage 250\nHP 3100\nextra elemental attack"},
+                                            {"Not learned yet.","Damage 30","Damage 50","Damage 70","Damage 90","Damage 110","Damage 200\nAttack fast."},
                                             
                                             {"Haven't learned yet.","Delay 10%","Delay 20%","Delay 30%","Delay 40%","Delay 50%",""},
                                             {"Haven't learned yet.","Speed+20%","Speed+40%","Speed+60%","Speed+80%","Speed+100%",""},
@@ -370,13 +372,13 @@ public class GameManager : MonoBehaviour
                                             {"아직 배우지 못했습니다.","아이템 획득 범위 200%","아이템 획득 범위 275%","아이템 획득 범위 325%","아이템 획득 범위 375%","아이템 획득 범위 450%",""},
                                             {"아직 배우지 못했습니다.","크리티컬 데미지155%\n크리티컬 확률5%","크리티컬 데미지160%\n크리티컬 확률10%","크리티컬 데미지165%\n크리티컬 확률15%","크리티컬 데미지170%\n크리티컬 확률20%","크리티컬 데미지175%\n크리티컬 확률25%",""}};
             } else if( character == "Hunter3"){
-                                weaponText = new string[]{"전기 에너지파","물의 파동","막 던지기","지뢰","포탑","활","딜레이","스피드","체력","파워","획득 범위","크리티컬"};
-                weaponExText = new string[,] {{"전기데미지의 파동을 발사합니다.\n타입 전기","데미지 증가","데미지 증가","데미지 증가","데미지 증가","파동이 지나간 자리에 불길이 생성됩니다.\n추가 타입 불"},
+                                weaponText = new string[]{"전기 파동","물의 파동","막 던지기","지뢰","포탑","활","딜레이","스피드","체력","파워","획득 범위","크리티컬"};
+                weaponExText = new string[,] {{"5초마다 전기데미지의 파동을 발사합니다.\n타입 전기","데미지 증가","데미지 증가","데미지 증가","데미지 증가","2초마다 발사됩니다.\n파동이 지나간 자리에 불길이 생성됩니다.\n추가 타입 불"},
                                             {"물과 에너지 파동을 동시에 발사합니다.\n타입 물, 물리","데미지 증가","데미지 증가","데미지 증가","데미지 증가","물리데미지가 얼음데미지로 변합니다.\n추가 타입 얼음"},
                                             {"랜덤하게 스킬을 사용합니다.\n타입 알수없음","데미지 증가\n개수 증가","데미지 증가\n개수 증가","데미지 증가\n개수 증가","데미지 증가\n개수 증가","랜덤하게 궁극기가 나갑니다."},
                                             {"랜덤한 위치에 3초마다 지뢰를 설치합니다.\n타입 전기","데미지 증가\n크기 증가","데미지 증가\n크기 증가","데미지 증가\n크기 증가","데미지 증가\n크기 증가","1초마다 지뢰를 설치합니다."},
                                             {"공격하는 포탑을 설치합니다.\n타입 물리","데미지 증가","데미지 증가","데미지 증가","데미지 증가","포탑이 불을 발사합니다."},
-                                            {"활을 던집니다.\n타입 물리","","","","",""},
+                                            {"2초마다 활을 던집니다.\n타입 물리","데미지 증가\n타격 개체 증가","데미지 증가\n타격 개체 증가","데미지 증가\n타격 개체 증가","데미지 증가\n타격 개체 증가","데미지 증가\n타격 개체 증가\n1초마다 발사합니다."},
 
                                             {"10% 딜레이 감소","20% 딜레이 감소","30% 딜레이 감소","40% 딜레이 감소","50% 딜레이 감소",""},
                                             {"20% 속도 증가","40% 속도 증가","60% 속도 증가","80% 속도 증가","100% 속도 증가",""},
@@ -384,12 +386,12 @@ public class GameManager : MonoBehaviour
                                             {"10% 파워 증가","20%  파워 증가","30%  파워 증가","40%  파워 증가","50%  파워 증가",""},
                                             {"아이템 획득 범위 증가","아이템 획득 범위 증가","아이템 획득 범위 증가","아이템 획득 범위 증가","아이템 획득 범위 증가",""},
                                             {"155% 크리티컬 데미지\n5% 크리티컬 확률","160% 크리티컬 데미지\n10% 크리티컬 확률","165% 크리티컬 데미지\n15% 크리티컬 확률","170% 크리티컬 데미지\n20% 크리티컬 확률","175% 크리티컬 데미지\n25% 크리티컬 확률",""}};
-                pauseExText = new string[,] {{"아직 배우지 못했습니다.","","","","","",""},
-                                            {"아직 배우지 못했습니다.","","","","","",""},
-                                            {"아직 배우지 못했습니다.","","","","","",""},
-                                            {"아직 배우지 못했습니다.","","","","","",""},
-                                            {"아직 배우지 못했습니다.","","","","","",""},
-                                            {"아직 배우지 못했습니다.","","","","","",""},
+                pauseExText = new string[,] {{"아직 배우지 못했습니다.","데미지 60","데미지 100","데미지 140","데미지 180","데미지 220","데미지 300\n2초마다 발사합니다.\n불길 생성"},
+                                            {"아직 배우지 못했습니다.","데미지 20 x 2","데미지 40 x 2","데미지 60 x 2","데미지 80 x 2","데미지 100 x 2","데미지 150 x 2\n추가 타입 얼음"},
+                                            {"아직 배우지 못했습니다.","1레벨 스킬","2레벨 스킬","3레벨 스킬","4레벨 스킬","5레벨 스킬","랜덤한 궁극기 스킬"},
+                                            {"아직 배우지 못했습니다.","데미지 80\n크기 100%","데미지 160\n크기 110%","데미지 240\n크기 120%","데미지 320\n크기 130%","데미지 400\n크기 140%","데미지 480\n크기 150%\n1초마다 생성"},
+                                            {"아직 배우지 못했습니다.","데미지 50\n크기 100%","데미지 100\n크기 110%","데미지 150\n크기 120%","데미지 200\n크기 130%","데미지 250\n크기 140%","데미지 300\n크기 150%\n추가 타입 불"},
+                                            {"아직 배우지 못했습니다.","데미지 50\n1번 튕김","데미지 80\n2번 튕김","데미지 120\n3번 튕김","데미지 150\n4번 튕김","데미지 200\n5번 튕김","데미지 250\n10번 튕김\n1초마다 발사"},
                                             
                                             {"아직 배우지 못했습니다.","딜레이 10%","딜레이 20%","딜레이 30%","딜레이 40%","딜레이 50%",""},
                                             {"아직 배우지 못했습니다.","이동속도+20%","이동속도+40%","이동속도+60%","이동속도+80%","이동속도+100%",""},
@@ -398,13 +400,13 @@ public class GameManager : MonoBehaviour
                                             {"아직 배우지 못했습니다.","아이템 획득 범위 200%","아이템 획득 범위 275%","아이템 획득 범위 325%","아이템 획득 범위 375%","아이템 획득 범위 450%",""},
                                             {"아직 배우지 못했습니다.","크리티컬 데미지155%\n크리티컬 확률5%","크리티컬 데미지160%\n크리티컬 확률10%","크리티컬 데미지165%\n크리티컬 확률15%","크리티컬 데미지170%\n크리티컬 확률20%","크리티컬 데미지175%\n크리티컬 확률25%",""}};
             } else if( character == "Hunter4"){
-                weaponText = new string[]{"곰","해골","새","뱀","얼음 골램","호수","딜레이","스피드","체력","파워","획득 범위","크리티컬"};
-                weaponExText = new string[,] {{"","","","","",""},
-                                            {"","","","","",""},
-                                            {"","","","","",""},
-                                            {"","","","","",""},
-                                            {"","","","","",""},
-                                            {"","","","","",""},
+                weaponText = new string[]{"곰","해골","새","뱀","골램","분수대","딜레이","스피드","체력","파워","획득 범위","크리티컬"};
+                weaponExText = new string[,] {{"느리지만 강한 곰을 소환합니다.","데미지 증가\n곰 체력 증가","데미지 증가\n곰 체력 증가","데미지 증가\n곰 체력 증가","데미지 증가\n곰 체력 증가","데미지 증가\n곰 체력 증가\n곰 속도 증가"},
+                                            {"해골을 소환합니다.\n보병, 궁수 50%확률로 소환","데미지 증가\n해골 체력 증가","데미지 증가\n해골 체력 증가","데미지 증가\n해골 체력 증가","데미지 증가\n해골 체력 증가","데미지 증가\n해골 체력 증가\n공격 속도 증가"},
+                                            {"공중지원을 하는 새를 소환합니다.","데미지 증가\n1번 통과","데미지 증가\n2번 통과","데미지 증가\n3번 통과","데미지 증가\n4번 통과","데미지 증가\n5번 통과\n2마리가 날아듭니다."},
+                                            {"독을 퍼트리는 뱀을 소환합니다.","데미지 증가\n크기 증가","데미지 증가\n크기 증가","데미지 증가\n크기 증가","데미지 증가\n크기 증가","데미지 증가\n크기 증가\n적을 끌어당깁니다."},
+                                            {"얼음, 번개, 불, 대지, 물 골렘 중 1개를 소환합니다.","데미지 증가\n체력 증가","데미지 증가\n체력 증가","데미지 증가\n체력 증가","데미지 증가\n체력 증가","데미지 증가\n체력 증가\n원소 스킬을 발사합니다."},
+                                            {"분수대를 소환합니다.\n5초마다 아군의 체력을 회복시킵니다.","데미지 증가","데미지 증가","데미지 증가","데미지 증가","데미지 증가\n더 빠르게 공격합니다."},
 
                                             {"10% 딜레이 감소","20% 딜레이 감소","30% 딜레이 감소","40% 딜레이 감소","50% 딜레이 감소",""},
                                             {"20% 속도 증가","40% 속도 증가","60% 속도 증가","80% 속도 증가","100% 속도 증가",""},
@@ -412,12 +414,12 @@ public class GameManager : MonoBehaviour
                                             {"10% 파워 증가","20%  파워 증가","30%  파워 증가","40%  파워 증가","50%  파워 증가",""},
                                             {"아이템 획득 범위 증가","아이템 획득 범위 증가","아이템 획득 범위 증가","아이템 획득 범위 증가","아이템 획득 범위 증가",""},
                                             {"155% 크리티컬 데미지\n5% 크리티컬 확률","160% 크리티컬 데미지\n10% 크리티컬 확률","165% 크리티컬 데미지\n15% 크리티컬 확률","170% 크리티컬 데미지\n20% 크리티컬 확률","175% 크리티컬 데미지\n25% 크리티컬 확률",""}};
-                pauseExText = new string[,] {{"","","","","","",""},
-                                            {"","","","","","",""},
-                                            {"","","","","","",""},
-                                            {"","","","","","",""},
-                                            {"","","","","","",""},
-                                            {"","","","","","",""},
+                pauseExText = new string[,] {{"아직 배우지 못했습니다.","데미지 60\n체력 600","데미지 120\n체력 1200","데미지 180\n체력 1800","데미지 240\n체력 2400","데미지 300\n체력 3000","데미지 360\n체력 5000\n이동속도 증가 및 공격 넉백효과"},
+                                            {"아직 배우지 못했습니다.","데미지 20\n체력 400\n1개의 해골병사","데미지 40\n체력 800\n2개의 해골병사","데미지 80\n체력 1600\n3개의 해골병사","데미지 100\n체력 2400\n4개의 해골병사","데미지 120\n체력 3200\n5개의 해골병사","데미지 150\n체력 4000\n5개의 해골병사\n공격속도 증가"},
+                                            {"아직 배우지 못했습니다.","데미지 80\n0번 통과","데미지 120\n1번 통과","데미지 150\n2번 통과","데미지 180\n3번 통과","데미지 210\n4번 통과","데미지 250\n5번 통과\n2마리 공격"},
+                                            {"아직 배우지 못했습니다.","데미지 30\n크기 80%","데미지 60\n크기 100%","데미지 90\n크기 120%","데미지 120\n크기 140%","데미지 150\n크기 160%","데미지 180\n크기 80%\n적군을 끌어당깁니다."},
+                                            {"아직 배우지 못했습니다.","데미지 40\n체력 500 ","데미지 80\n체력 1000","데미지 120\n체력 1500","데미지 160\n체력 2000","데미지 200\n체력 2500","데미지 250\n체력 3100\n추가 원소 공격"},
+                                            {"아직 배우지 못했습니다.","데미지 30","데미지 50","데미지 70","데미지 90","데미지 110","데미지 200\n빠르게 공격합니다."},
                                             
                                             {"아직 배우지 못했습니다.","딜레이 10%","딜레이 20%","딜레이 30%","딜레이 40%","딜레이 50%",""},
                                             {"아직 배우지 못했습니다.","이동속도+20%","이동속도+40%","이동속도+60%","이동속도+80%","이동속도+100%",""},
@@ -487,8 +489,8 @@ public class GameManager : MonoBehaviour
     void spawnEnemy()
     {
         //랜덤으로 부를 경우
-        //int ranEnemy = Random.Range(0, enemyObjs.Length);
-        //int ranPoint = Random.Range(0, spawnPoints.Length);
+        // int ranEnemy = Random.Range(0, enemyObjs.Length);
+        // int ranPoint = Random.Range(0, spawnPoints.Length);
         int enemyIndex = 0;
         switch(spawnList[spawnIndex].type){
             case "A":
@@ -501,16 +503,15 @@ public class GameManager : MonoBehaviour
                 enemyIndex = 3;
                 break;
             case "D":
+                bossHealthBar.SetActive(true);
                 enemyIndex = 2;
                 break;
             case "E":
                 bossHealthBar.SetActive(true);
                 enemyIndex = 1;
                 break;
-            case "I":
-                enemyIndex = 0;
-                break;
             case "Event1":
+                enemyIndex = 4;
                 eventPanel.SetActive(true);
                 camAnim.SetBool("IsOn",true);
                 if(language == "English"){
@@ -518,13 +519,14 @@ public class GameManager : MonoBehaviour
                 } else if(language == "Korean"){
                     eventText.text = "경고!\n몬스터 무리가 다가옵니다.";
                 }
-                
                 break;
             case "EventOut":
+                enemyIndex = 4;
                 //적군이 더 이상 없을 경우 아웃(혹시 있다면 시간을 딜레이)
                 camAnim.SetBool("IsOn",false);
             break;
             case "Event2":
+                enemyIndex = 4;
                 eventPanel.SetActive(true);
                 camAnim.SetBool("IsOn",true);
                 if(language == "English"){
@@ -532,7 +534,11 @@ public class GameManager : MonoBehaviour
                 } else if(language == "Korean"){
                     eventText.text = "경고!\n보스가 등장합니다.";
                 }
-                break;
+            break;
+            case "SS":
+                spawnEnd = true;
+                enemyIndex = 4;
+            break;
         }
         int enemyPoint = spawnList[spawnIndex].point;
         GameObject enemy = objectManager.MakeObj(enemyObjs[enemyIndex]);
@@ -546,6 +552,7 @@ public class GameManager : MonoBehaviour
         enemyCount++;
         //리스폰 인덱스 증가
         spawnIndex++;
+
         //스폰이 끝난 경우
         if(spawnIndex == spawnList.Count){
             spawnEnd = true;
@@ -571,6 +578,8 @@ public class GameManager : MonoBehaviour
             levelText.text = "레벨 " + playerLevel.ToString();
         }
         
+        BoxCreat();
+
         expBar.fillAmount = playerMove.exp / levelUpExp;
 
         //체력에 게이지
@@ -587,6 +596,10 @@ public class GameManager : MonoBehaviour
 
         //플레이어를 따라가는 UI
         playerUI.transform.position = Camera.main.WorldToScreenPoint(player.transform.position + new Vector3(0, -0.4f, 0));
+
+        if(enemyCount == 0 && spawnEnd){
+            spawnEnd = false;
+        }
 
         //소환 함수
         curSpawnDelay += Time.deltaTime;
@@ -1043,5 +1056,23 @@ public class GameManager : MonoBehaviour
         boom.transform.position = player.transform.position;
         playerMove.gameObject.layer = 6;
         pauseButton.SetActive(true);
+    }
+    void BoxCreat()
+    {
+        if(boxCreatTime<=0){
+            int ranTime = Random.Range(5,11);
+            boxCreatTime = ranTime;
+            int ran = Random.Range(0,spawnPoints.Length-1);
+            GameObject enemy = objectManager.MakeObj(enemyObjs[0]);
+            enemy.transform.position = spawnPoints[ran].position;
+            Rigidbody2D rigid = enemy.GetComponent<Rigidbody2D>();
+            EnemyMove enemyLogic = enemy.GetComponent<EnemyMove>();
+            enemyLogic.player = player;
+            enemyLogic.playerLogic = playerMove;
+            enemyLogic.objectManager = objectManager;
+            enemyLogic.gameManager = this;
+        } else {
+            boxCreatTime -= Time.deltaTime;
+        }
     }
 }

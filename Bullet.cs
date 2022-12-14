@@ -4,7 +4,6 @@ using UnityEngine;
 
 public class Bullet : MonoBehaviour
 {
-    bool isStart;
     public string elementalType;
     bool windChangeOn;
     string windChangeType;
@@ -13,27 +12,27 @@ public class Bullet : MonoBehaviour
     public int weaponType;
     public float power;
     public Transform playerTransform;
-    public float fireTime;
-    public bool iceBoom;
     public float waepon6Timer; //윈드포스 타이머
     ParticleSystem particle;
     float weaponAngle;
     public ObjectManager objectManager;
     public PlayerMove playerMove;
     public int matchCount; // 관통 할 수 있는 횟수
-    public int enemyArmorClearCount; // 가시갑옷 진화
+    public bool throwBullet; // 관통 여부
     public bool armorKill; // 가시갑옷 즉사
     Rigidbody2D rigid;
     PointEffector2D pointEffector2D;
+    
 
     float deg; //각도
     public Vector3 playerCurVec;
-    public bool maxLevel = false;
+    public bool maxLevel;
     public float bulletSpeed;
     float energyForceTime;
     bool enemyForeceMax;
     Animator anim;
     public bool turretBullet;
+    public GameObject playerObjPos;
     
     void Awake()
     {
@@ -56,7 +55,7 @@ public class Bullet : MonoBehaviour
             windChangeType = "Wind";
             Invoke("ActiveOff", waepon6Timer);
         } else if (weaponType == 7){ // 파이어 워커의 경우
-            fireTime = 3f;
+            Invoke("ActiveOff", 3f);
         } else if (weaponType == 8){ // 체인 라이트닝의 경우
             Invoke("ActiveOff",0.2f);
         } else if (enemyWeapon){ //적 총알의 경우 3초 후 삭제
@@ -86,33 +85,39 @@ public class Bullet : MonoBehaviour
             Invoke("ActiveOff", 3f);
         } else if (weaponType == 33){ // 뱀의 경우
             Invoke("ActiveOff", 10f);
+        } else if(weaponType == 22){ // 물의 파동의 경우
+            elementalType = "Water";
         }
     }
     void Update()
     {
         if(weaponType == 2 && gameObject.activeSelf){ //주위를 도는 돌
-            bulletSpeed = 100f;
-            transform.RotateAround(playerTransform.position, Vector3.forward, Time.deltaTime * bulletSpeed);
-            float weapon2CurPower = 50;
-            float weapon2Power = weapon2CurPower * GameManager.instance.playerMove.power * GameManager.instance.playerMove.weaponLevel[5];
-            power = weapon2Power;
-            weapon2Time -= Time.deltaTime;
-            if(weapon2Time <= 0){
-                weapon2Time = 4.9f;
-                ActiveOff();
-            }
-        } else if(weaponType== 7 && gameObject.activeSelf){ // 파이어 워커
-            fireTime-=Time.deltaTime;
-            if(fireTime<=0){
-                ActiveOff();
+            if(!maxLevel){
+                bulletSpeed = 100f;
+                transform.RotateAround(playerTransform.position, Vector3.forward, Time.deltaTime * bulletSpeed);
+                float weapon2CurPower = 50;
+                float weapon2Power = weapon2CurPower * GameManager.instance.playerMove.power * GameManager.instance.playerMove.weaponLevel[5];
+                power = weapon2Power;
+                weapon2Time -= Time.deltaTime;
+                if(weapon2Time <= 0){
+                    weapon2Time = 4.9f;
+                    ActiveOff();
+                }
             }
         } else if(weaponType == 9 && gameObject.activeSelf){ // 물 오로라
-            float weapon10CurPower = 30;
-            float weapon10Power = weapon10CurPower * GameManager.instance.playerMove.power * GameManager.instance.playerMove.weaponLevel[4];
-            power = weapon10Power;
-            float weapon10Speed = 100f;
-            Vector3 weapon10Rotate = new Vector3(0,0,Time.deltaTime*weapon10Speed);
-            transform.Rotate(weapon10Rotate);
+            if(maxLevel){
+                transform.position = playerObjPos.transform.position;
+                float weapon10Speed = 100f;
+                Vector3 weapon10Rotate = new Vector3(0,0,Time.deltaTime*weapon10Speed);
+                transform.Rotate(weapon10Rotate);
+            } else {
+                float weapon10CurPower = 30;
+                float weapon10Power = weapon10CurPower * GameManager.instance.playerMove.power * GameManager.instance.playerMove.weaponLevel[4];
+                power = weapon10Power;
+                float weapon10Speed = 100f;
+                Vector3 weapon10Rotate = new Vector3(0,0,Time.deltaTime*weapon10Speed);
+                transform.Rotate(weapon10Rotate);
+            }
         } else if(weaponType== 10 && gameObject.activeSelf){ // 곡괭이
             weaponAngle += Time.deltaTime * 100;
             transform.rotation = Quaternion.Euler(0,0,weaponAngle);
@@ -155,7 +160,6 @@ public class Bullet : MonoBehaviour
                 GameObject bullet = objectManager.MakeObj("BulletPlayer7");
                 Bullet bulletLogic = bullet.GetComponent<Bullet>();
                 bulletLogic.power = power/2;
-                bulletLogic.fireTime = 3f;
                 Vector3 ranVec = new Vector3(Random.Range(0.5f,3.5f),Random.Range(-1.5f,-2.5f),0);
                 bullet.transform.position = transform.position;
                 energyForceTime = 0.1f;
@@ -233,14 +237,14 @@ public class Bullet : MonoBehaviour
                     otherLogic.IsWater(this);
                 break;
             }
-        } else if (iceBoom && other.gameObject.tag == "Enemy"){ // 아이스 붐이 적군이랑 만났을 경우
+        } else if (weaponType == 3 && maxLevel && other.gameObject.tag == "Enemy"){ // 아이스 붐이 적군이랑 만났을 경우
             for (int i =0;i<10;i++){
                 GameObject bullet = objectManager.MakeObj("BulletPlayer3");
                 bullet.transform.position = transform.position;
                 Bullet bulletLogic = bullet.GetComponent<Bullet>();
                 Rigidbody2D rigid = bullet.GetComponent<Rigidbody2D>();
                 bulletLogic.power = power;
-                bulletLogic.iceBoom = false;
+                bulletLogic.maxLevel = false;
                 bullet.transform.localScale = new Vector3(1.8f,1.8f,0);
 
                 //회전 함수
@@ -258,13 +262,18 @@ public class Bullet : MonoBehaviour
             Effect dieEffectLogic = dieEffect.GetComponent<Effect>();
             dieEffect.transform.position = transform.position;
             dieEffectLogic.power = power;
-        } else if(weaponType == 25 && other.gameObject.tag == "Enemy"){ // 활 일 경우
-            if(matchCount>=1){
-                Vector2 ranVec = new Vector2(Random.Range(-1,2),3f);
-                rigid.AddForce(ranVec, ForceMode2D.Impulse);
-                matchCount--;
+        }
+        if(other.gameObject.tag == "Enemy" && !throwBullet){ // 관통 여부
+            if(matchCount<=0){
+                ActiveOff();
             } else {
-                gameObject.SetActive(false);
+                if(weaponType == 25){ // 활 일 경우
+                    Vector2 ranVec = new Vector2(Random.Range(-1,2),3f);
+                    rigid.AddForce(ranVec, ForceMode2D.Impulse);
+                    matchCount--;
+                } else {
+                    matchCount--;
+                }
             }
         }
     }
@@ -274,15 +283,10 @@ public class Bullet : MonoBehaviour
     }
     void MeteoAttack()
     {
-        if(!isStart){
-            isStart=true;
-            return;
-        }
         for(int i = 0;i<5;i++){
             GameObject bullet = objectManager.MakeObj("BulletPlayer7");
             Bullet bulletLogic = bullet.GetComponent<Bullet>();
             bulletLogic.power = power/2;
-            bulletLogic.fireTime = 3f;
             Vector3 ranVec = new Vector3(Random.Range(0.5f,3.5f),Random.Range(-1.5f,-2.5f),0);
             bullet.transform.position = transform.position + ranVec;
         }
@@ -307,7 +311,9 @@ public class Bullet : MonoBehaviour
     }
     void OnDisable()
     {
+        matchCount = 0;
         CancelInvoke();
+        // maxLevel = false;
         if(weaponType == 33 ){ // 뱀 비활성화시
             playerMove.snake = false;
             playerMove.snakeCount = 3;

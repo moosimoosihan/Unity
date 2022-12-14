@@ -14,7 +14,7 @@ public class PlayerMove : MonoBehaviour
     public GameObject targetEnemy;
     int weapon2Count; // 돌맹이 회전 쿨타임 수
     float weapon4Count; // 따발총 쿨타임 수
-    float weapon4Delay; // 따발총 쿨타임
+    float weapon4Delay = 1f; // 따발총 쿨타임
     float weapon4MaxCount; // 띠발총 최대 쿨타임
     int weapon6Count; // 윈드 포스 쿨타임
     public GameObject[] weapon2LV;
@@ -40,8 +40,8 @@ public class PlayerMove : MonoBehaviour
     int randomThrowCount; // 랜덤하게 던지는 무기 카운트
     int trapCount; // 지뢰 카운트
     public GameObject turretObj; // 터렛 오브젝트
-    int bowCount; // 활 튕기는 카운트
-    int brearCount; // 곰 카운트
+    int bowCount; // 활 카운트
+    public int brearCount; // 곰 카운트
     public GameObject bearObj; // 곰 오브젝트
     public int skullCount; // 스켈레톤 개수
     int skullCreateCount; // 스켈레톤 카운트
@@ -50,7 +50,11 @@ public class PlayerMove : MonoBehaviour
     public bool snake; // 뱀 활성화 확인 함수
     public int snakeCount; // 뱀 카운트
     public GameObject golemObj; // 골렘 오브젝트
-    public GameObject lakeObj; // 호수 오브젝트
+    public bool isGolem; // 골렘 활성화 확인 함수
+    public int golemCount; // 골렘 카운트
+    public int lakeCount; // 호수 카운트
+    public bool isLake; // 호수 활성화 확인 함수
+    float healingCount;
 
     //패시브 관련 함수
     public bool[,] passiveLevel; // 딜레이, 스피드, 체력, 파워, 자석
@@ -233,7 +237,21 @@ public class PlayerMove : MonoBehaviour
             }
         }
     }
+    private void OnTriggerStay2D(Collider2D other) {
+        if(playerDead) return;
 
+        // 호수에 닿아 있다면 회복
+        if(other.gameObject.tag == "PlayerObj"){
+            PlayerObj lakeLogic = other.gameObject.GetComponent<PlayerObj>();
+            if(lakeLogic.type == "Lake"){
+                healingCount += Time.deltaTime;
+                if(healingCount>=5){
+                    Healing(lakeLogic.power*0.05f);
+                    healingCount = 0;
+                }
+            }
+        }
+    }
     void OnCollisionExit2D(Collision2D other) {
         //적군과 떨어지면 색상을 복구해라
         if(other.gameObject.tag == "Enemy"){
@@ -1203,57 +1221,52 @@ public class PlayerMove : MonoBehaviour
                 switch(weaponLevel[0]){ // 느린 공격 데미지 높은 곰
                     case 1:
                         if(brearCount<=0){
-                            Bear(60, 300, false);
-                            brearCount = 2;
+                            Bear(60, 600, false);
+                            brearCount=1;
                         } else {
                             brearCount--;
                         }
                     break;
                     case 2:
                         if(brearCount<=0){
-                            Bear(120, 600, false);
-                            brearCount = 2;
+                            Bear(120, 1200, false);
+                            brearCount=1;
                         } else {
                             brearCount--;
                         }
                     break;
                     case 3:
                         if(brearCount<=0){
-                            Bear(180, 900, false);
-                            brearCount = 2;
+                            Bear(180, 1800, false);
+                            brearCount=1;
                         } else {
                             brearCount--;
                         }
                     break;
                     case 4:
                         if(brearCount<=0){
-                            Bear(240, 1200, false);
-                            brearCount = 2;
+                            Bear(240, 2400, false);
+                            brearCount=1;
                         } else {
                             brearCount--;
                         }
                     break;
                     case 5:
                         if(brearCount<=0){
-                            Bear(300, 1500, false);
-                            brearCount = 2;
+                            Bear(300, 3000, false);
+                            brearCount=1;
                         } else {
                             brearCount--;
                         }
                     break;
                     case 6:
-                        if(brearCount<=0){
-                            Bear(360, 2000, true);
-                            brearCount = 1;
-                        } else {
-                            brearCount--;
-                        }
+                        Bear(360, 5000, true);
                     break;
                 }
                 switch(weaponLevel[1]){ // 스켈레톤
                     case 1:
                         if(skullCreateCount<=0){
-                            SkullCreat(20,200,1,false);
+                            SkullCreat(20,400,1,false);
                             skullCreateCount = 1;
                         } else {
                             skullCreateCount--;
@@ -1261,7 +1274,7 @@ public class PlayerMove : MonoBehaviour
                     break;
                     case 2:
                         if(skullCreateCount<=0){
-                            SkullCreat(40,350,2,false);
+                            SkullCreat(40,800,2,false);
                             skullCreateCount = 1;
                         } else {
                             skullCreateCount--;
@@ -1269,7 +1282,7 @@ public class PlayerMove : MonoBehaviour
                     break;
                     case 3:
                         if(skullCreateCount<=0){
-                            SkullCreat(80,500,3,false);
+                            SkullCreat(80,1600,3,false);
                             skullCreateCount = 1;
                         } else {
                             skullCreateCount--;
@@ -1277,7 +1290,7 @@ public class PlayerMove : MonoBehaviour
                     break;
                     case 4:
                         if(skullCreateCount<=0){
-                            SkullCreat(90,650,4,false);
+                            SkullCreat(100,2400,4,false);
                             skullCreateCount = 1;
                         } else {
                             skullCreateCount--;
@@ -1285,20 +1298,20 @@ public class PlayerMove : MonoBehaviour
                     break;
                     case 5:
                         if(skullCreateCount<=0){
-                            SkullCreat(120,800,5,false);
+                            SkullCreat(120,3200,5,false);
                             skullCreateCount = 1;
                         } else {
                             skullCreateCount--;
                         }
                     break;
                     case 6:
-                        SkullCreat(150,1000,5,true);
+                        SkullCreat(150,4000,5,true);
                     break;
                 }
                 switch(weaponLevel[2]){ // 적군을 쫒아 공격하는 새
                     case 1:
                         if(birdAttackCount<=0){
-                            BirdCreat(80,false);
+                            BirdCreat(80,0,false);
                             birdAttackCount = 2;
                         } else {
                             birdAttackCount--;
@@ -1306,7 +1319,7 @@ public class PlayerMove : MonoBehaviour
                     break;
                     case 2:
                         if(birdAttackCount<=0){
-                            BirdCreat(120,false);
+                            BirdCreat(120,1,false);
                             birdAttackCount = 2;
                         } else {
                             birdAttackCount--;
@@ -1314,7 +1327,7 @@ public class PlayerMove : MonoBehaviour
                     break;
                     case 3:
                         if(birdAttackCount<=0){
-                            BirdCreat(150,false);
+                            BirdCreat(150,2,false);
                             birdAttackCount = 2;
                         } else {
                             birdAttackCount--;
@@ -1322,7 +1335,7 @@ public class PlayerMove : MonoBehaviour
                     break;
                     case 4:
                         if(birdAttackCount<=0){
-                            BirdCreat(180,false);
+                            BirdCreat(180,3,false);
                             birdAttackCount = 2;
                         } else {
                             birdAttackCount--;
@@ -1330,7 +1343,7 @@ public class PlayerMove : MonoBehaviour
                     break;
                     case 5:
                         if(birdAttackCount<=0){
-                            BirdCreat(210,false);
+                            BirdCreat(210,4,false);
                             birdAttackCount = 2;
                         } else {
                             birdAttackCount--;
@@ -1338,7 +1351,7 @@ public class PlayerMove : MonoBehaviour
                     break;
                     case 6:
                         if(birdAttackCount<=0){
-                            BirdCreat(250,true);
+                            BirdCreat(250,5,true);
                             birdAttackCount = 2;
                         } else {
                             birdAttackCount--;
@@ -1348,19 +1361,133 @@ public class PlayerMove : MonoBehaviour
                 switch(weaponLevel[3]){ // 독을 뿜는 뱀
                     case 1:
                         if(snakeCount<=0){
-                            SnakeCreat(5, 0.8f, false);
+                            SnakeCreat(30, 0.8f, false);
                         } else {
                             snakeCount--;
                         }
-                        
+                    break;
+                    case 2:
+                        if(snakeCount<=0){
+                            SnakeCreat(60, 1f, false);
+                        } else {
+                            snakeCount--;
+                        }
+                    break;
+                    case 3:
+                        if(snakeCount<=0){
+                            SnakeCreat(90, 1.2f, false);
+                        } else {
+                            snakeCount--;
+                        }
+                    break;
+                    case 4:
+                        if(snakeCount<=0){
+                            SnakeCreat(120, 1.4f, false);
+                        } else {
+                            snakeCount--;
+                        }
+                    break;
+                    case 5:
+                        if(snakeCount<=0){
+                            SnakeCreat(150, 1.6f, false);
+                        } else {
+                            snakeCount--;
+                        }
+                    break;
+                    case 6:
+                        if(snakeCount<=0){
+                            SnakeCreat(180, 1.8f, true);
+                        } else {
+                            snakeCount--;
+                        }
                     break;
                 }
-                switch(weaponLevel[4]){ // 얼음 골램
+                switch(weaponLevel[4]){ // 골램
                     case 1:
+                        if(golemCount<=0){
+                            Golem(40,500,false);
+                        } else {
+                            golemCount--;
+                        }
+                    break;
+                    case 2:
+                        if(golemCount<=0){
+                            Golem(80,1000,false);
+                        } else {
+                            golemCount--;
+                        }
+                    break;
+                    case 3:
+                        if(golemCount<=0){
+                            Golem(120,1500,false);
+                        } else {
+                            golemCount--;
+                        }
+                    break;
+                    case 4:
+                        if(golemCount<=0){
+                            Golem(160,2000,false);
+                        } else {
+                            golemCount--;
+                        }
+                    break;
+                    case 5:
+                        if(golemCount<=0){
+                            Golem(200,2500,false);
+                        } else {
+                            golemCount--;
+                        }
+                    break;
+                    case 6:
+                        if(golemCount<=0){
+                            Golem(250,3100,true);
+                        } else {
+                            golemCount--;
+                        }
                     break;
                 }
                 switch(weaponLevel[5]){ // 물 호수
                     case 1:
+                        if(lakeCount<=0){
+                            LakeCreate(30, false);
+                        } else {
+                            lakeCount--;
+                        }
+                    break;
+                    case 2:
+                        if(lakeCount<=0){
+                            LakeCreate(50, false);
+                        } else {
+                            lakeCount--;
+                        }
+                    break;
+                    case 3:
+                        if(lakeCount<=0){
+                            LakeCreate(70, false);
+                        } else {
+                            lakeCount--;
+                        }
+                    break;
+                    case 4:
+                        if(lakeCount<=0){
+                            LakeCreate(90, false);
+                        } else {
+                            lakeCount--;
+                        }
+                    break;
+                    case 5:
+                        if(lakeCount<=0){
+                            LakeCreate(110, false);
+                        } else {
+                            lakeCount--;
+                        }
+                    break;
+                    case 6:
+                        if(lakeCount<=0){
+                            LakeCreate(200, true);
+                        } else {
+                            lakeCount--;
+                        }
                     break;
                 }
             }
@@ -1722,7 +1849,7 @@ public class PlayerMove : MonoBehaviour
         bullet.transform.position = transform.position;
         Rigidbody2D rigid = bullet.GetComponent<Rigidbody2D>();
         bulletLogic.power = dmg * power;
-        bulletLogic.iceBoom = maxLevel;
+        bulletLogic.maxLevel = maxLevel;
         
         //회전 함수
         float degree = Mathf.Atan2(transform.position.y-targetImage.transform.position.y,transform.position.x-targetImage.transform.position.x)*180f/Mathf.PI;
@@ -1816,6 +1943,7 @@ public class PlayerMove : MonoBehaviour
                     bullet.transform.position = transform.position;
                     Bullet bulletLogic = bullet.GetComponent<Bullet>();
                     Rigidbody2D rigid = bullet.GetComponent<Rigidbody2D>();
+                    bulletLogic.matchCount += 2;
 
                     bulletLogic.power = dmg;
                     bullet.transform.localScale = new Vector3(scale,scale,0);
@@ -1835,6 +1963,7 @@ public class PlayerMove : MonoBehaviour
                     bullet.transform.position = transform.position;
                     Bullet bulletLogic = bullet.GetComponent<Bullet>();
                     Rigidbody2D rigid = bullet.GetComponent<Rigidbody2D>();
+                    bulletLogic.matchCount += 2;
 
                     bulletLogic.power = dmg;
                     bullet.transform.localScale = new Vector3(scale,scale,0);
@@ -1854,6 +1983,7 @@ public class PlayerMove : MonoBehaviour
                     bullet.transform.position = transform.position;
                     Bullet bulletLogic = bullet.GetComponent<Bullet>();
                     Rigidbody2D rigid = bullet.GetComponent<Rigidbody2D>();
+                    bulletLogic.matchCount += 2;
 
                     bulletLogic.power = dmg;
                     bullet.transform.localScale = new Vector3(scale,scale,0);
@@ -2121,21 +2251,32 @@ public class PlayerMove : MonoBehaviour
     // 터렛
     void TurretCreat(float dmg, float scale, bool maxLevel)
     {
-        if(turretObj.activeSelf){
-            PlayerObj turret = turretObj.GetComponent<PlayerObj>();
-            turret.power = dmg * power;
-            turret.Fire(false);
-        } else {
-            PlayerObj turret = turretObj.GetComponent<PlayerObj>();
-            turretObj.transform.localScale = new Vector3(scale, scale, 0);
-            turretObj.SetActive(true);
-            Vector2 pos = new Vector2(transform.position.x+1f,transform.position.y);
-            turretObj.transform.position = pos;
-        }
         if(maxLevel){
-            PlayerObj turret = turretObj.GetComponent<PlayerObj>();
-            turret.power = dmg * power;
-            turret.maxLevel = maxLevel;
+            if(turretObj.activeSelf){
+                PlayerObj turret = turretObj.GetComponent<PlayerObj>();
+                turret.power = dmg * power;
+                turret.Fire(maxLevel);
+            } else {
+                turretObj.transform.localScale = new Vector3(scale, scale, 0);
+                turretObj.SetActive(true);
+                Vector2 pos = new Vector2(transform.position.x+1f,transform.position.y);
+                turretObj.transform.position = pos;
+                PlayerObj turret = turretObj.GetComponent<PlayerObj>();
+                turret.power = dmg * power;
+                turret.maxLevel = maxLevel;
+            }
+        } else {
+            if(turretObj.activeSelf){
+                PlayerObj turret = turretObj.GetComponent<PlayerObj>();
+                turret.power = dmg * power;
+                turret.Fire(maxLevel);
+            } else {
+                PlayerObj turret = turretObj.GetComponent<PlayerObj>();
+                turretObj.transform.localScale = new Vector3(scale, scale, 0);
+                turretObj.SetActive(true);
+                Vector2 pos = new Vector2(transform.position.x+1f,transform.position.y);
+                turretObj.transform.position = pos;
+            }
         }
     }
     // 활 던지기
@@ -2152,7 +2293,7 @@ public class PlayerMove : MonoBehaviour
         float degree = Mathf.Atan2(transform.position.y-targetImage.transform.position.y,transform.position.x-targetImage.transform.position.x)*180f/Mathf.PI;
         bullet.transform.rotation = Quaternion.Euler(0,0,degree + 180f);
         rigid.AddForce(dirVec.normalized * bulletSpeed * 1.5f, ForceMode2D.Impulse);
-        bulletLogic.matchCount = count;
+        bulletLogic.matchCount += count;
         bulletLogic.maxLevel = maxLevel;
     }
     // 곰
@@ -2161,11 +2302,12 @@ public class PlayerMove : MonoBehaviour
         if(bearObj.activeSelf){
             PlayerObj bear = bearObj.GetComponent<PlayerObj>();
             bear.power = dmg * power;
-            bear.Fire(false);
+            bear.Fire(maxLevel);
         } else {
             PlayerObj bear = bearObj.GetComponent<PlayerObj>();
             bear.life = objLife;
             bearObj.SetActive(true);
+            bear.power = dmg * power;
             Vector2 pos = new Vector2(transform.position.x+1f,transform.position.y);
             bearObj.transform.position = pos;
         }
@@ -2208,7 +2350,7 @@ public class PlayerMove : MonoBehaviour
         }
     }
     // 새
-    void BirdCreat(float dmg, bool maxLevel)
+    void BirdCreat(float dmg, int count, bool maxLevel)
     {
         int ran = Random.Range(0,2);
         PlayerObj birdLogic = birdObj.GetComponent<PlayerObj>();
@@ -2222,6 +2364,7 @@ public class PlayerMove : MonoBehaviour
                 Rigidbody2D rigid = bullet.GetComponent<Rigidbody2D>();
                 Bullet bulletLogic = bullet.GetComponent<Bullet>();
                 bulletLogic.power = dmg * power;
+                bulletLogic.matchCount += count;
 
                 bullet.transform.position = new Vector2(targetImage.transform.position.x, transform.position.y+5f);
                 //회전 함수
@@ -2233,6 +2376,7 @@ public class PlayerMove : MonoBehaviour
                 Rigidbody2D rigid1 = bullet1.GetComponent<Rigidbody2D>();
                 Bullet bulletLogic1 = bullet1.GetComponent<Bullet>();
                 bulletLogic1.power = dmg * power;
+                bulletLogic1.matchCount += count;
 
                 bullet1.transform.position = new Vector2(transform.position.x+4f, targetImage.transform.position.y);
                 //회전 함수
@@ -2244,6 +2388,7 @@ public class PlayerMove : MonoBehaviour
                     Rigidbody2D rigid = bullet.GetComponent<Rigidbody2D>();
                     Bullet bulletLogic = bullet.GetComponent<Bullet>();
                     bulletLogic.power = dmg * power;
+                    bulletLogic.matchCount += count;
 
                     bullet.transform.position = new Vector2(targetImage.transform.position.x, transform.position.y+5f);
                     //회전 함수
@@ -2254,6 +2399,7 @@ public class PlayerMove : MonoBehaviour
                     Rigidbody2D rigid = bullet.GetComponent<Rigidbody2D>();
                     Bullet bulletLogic = bullet.GetComponent<Bullet>();
                     bulletLogic.power = dmg * power;
+                    bulletLogic.matchCount += count;
 
                     bullet.transform.position = new Vector2(transform.position.x+4f, targetImage.transform.position.y);
                     //회전 함수
@@ -2273,6 +2419,109 @@ public class PlayerMove : MonoBehaviour
             bullet.transform.position = transform.position;
             Bullet bulletLogic = bullet.GetComponent<Bullet>();
             bulletLogic.power = dmg * power;
+            if(maxLevel){
+                PointEffector2D bulletPointer = bullet.GetComponent<PointEffector2D>();
+                bulletPointer.forceMagnitude = -30;
+            }
+        }
+    }
+    // 골렘
+    void Golem(float dmg, float life, bool maxLevel)
+    {
+        int ran = Random.Range(0,6);
+        if(ran==0){ // 아이스 골렘
+            if(!golemObj.activeSelf){
+                isGolem = true;
+                golemObj.SetActive(true);
+                PlayerObj golemLogic = golemObj.GetComponent<PlayerObj>();
+                golemLogic.type = "IceGolem";
+                golemLogic.life = life;
+                golemLogic.power = dmg * power;
+                Vector2 pos = new Vector2(transform.position.x+1f,transform.position.y);
+                golemObj.transform.position = pos;
+                golemLogic.maxLevel = maxLevel;
+            } else {
+                PlayerObj golem = golemObj.GetComponent<PlayerObj>();
+                golem.power = dmg * power;
+                golem.Fire(maxLevel);
+            }
+        } else if(ran==1){ // 파이어 골렘
+            if(!golemObj.activeSelf){
+                isGolem = true;
+                golemObj.SetActive(true);
+                PlayerObj golemLogic = golemObj.GetComponent<PlayerObj>();
+                golemLogic.type = "FireGolem";
+                golemLogic.life = life;
+                golemLogic.power = (dmg * power) * 0.8f;
+                Vector2 pos = new Vector2(transform.position.x+1f,transform.position.y);
+                golemObj.transform.position = pos;
+                golemLogic.maxLevel = maxLevel;
+            } else {
+                PlayerObj golem = golemObj.GetComponent<PlayerObj>();
+                golem.power = dmg * power;
+                golem.Fire(maxLevel);
+            }
+        } else if(ran==3){ // 돌 골렘
+            if(!golemObj.activeSelf){
+                isGolem = true;
+                golemObj.SetActive(true);
+                PlayerObj golemLogic = golemObj.GetComponent<PlayerObj>();
+                golemLogic.type = "StoneGolem";
+                golemLogic.life = life;
+                golemLogic.power = dmg * power;
+                Vector2 pos = new Vector2(transform.position.x+1f,transform.position.y);
+                golemObj.transform.position = pos;
+                golemLogic.maxLevel = maxLevel;
+            } else {
+                PlayerObj golem = golemObj.GetComponent<PlayerObj>();
+                golem.power = dmg * power;
+                golem.Fire(maxLevel);
+            }
+        } else if(ran==4){ // 물 골렘
+            if(!golemObj.activeSelf){
+                isGolem = true;
+                golemObj.SetActive(true);
+                PlayerObj golemLogic = golemObj.GetComponent<PlayerObj>();
+                golemLogic.type = "WaterGolem";
+                golemLogic.life = life;
+                golemLogic.power = dmg * power;
+                Vector2 pos = new Vector2(transform.position.x+1f,transform.position.y);
+                golemObj.transform.position = pos;
+                golemLogic.maxLevel = maxLevel;
+             } else {
+                PlayerObj golem = golemObj.GetComponent<PlayerObj>();
+                golem.power = dmg * power;
+                golem.Fire(maxLevel);
+            }
+        } else { // 전기 골렘
+            if(!golemObj.activeSelf){
+                isGolem = true;
+                golemObj.SetActive(true);
+                PlayerObj golemLogic = golemObj.GetComponent<PlayerObj>();
+                golemLogic.type = "LightningGolem";
+                golemLogic.life = life;
+                golemLogic.power = (dmg * power)*0.8f;
+                Vector2 pos = new Vector2(transform.position.x+1f,transform.position.y);
+                golemObj.transform.position = pos;
+                golemLogic.maxLevel = maxLevel;
+            } else {
+                PlayerObj golem = golemObj.GetComponent<PlayerObj>();
+                golem.power = dmg * power;
+                golem.Fire(maxLevel);
+            }
+        }
+    }
+    // 호수
+    void LakeCreate(float dmg, bool maxLevel)
+    {
+        if(!isLake){
+            isLake=true;
+            GameObject bullet = objectManager.MakeObj("BulletPlayer35");
+            PlayerObj lakeLogic = bullet.GetComponent<PlayerObj>();
+            lakeLogic.power = dmg * power;
+            Vector2 pos = new Vector2(transform.position.x+1f,transform.position.y);
+            bullet.transform.position = pos;
+            lakeLogic.maxLevel = maxLevel;
         }
     }
 
@@ -2391,6 +2640,36 @@ public class PlayerMove : MonoBehaviour
             shieldObj.SetActive(true);
         } else {
             shieldObj.SetActive(false);
+        }
+    }
+    public void EnemyOff()
+    {
+        //화면의 적군을 지우기 아직 사용x
+        boomEffect.SetActive(true);
+        GameObject[] enemyA = objectManager.GetPool("EnemyA");
+        GameObject[] enemyB = objectManager.GetPool("EnemyB");
+        GameObject[] enemyC = objectManager.GetPool("EnemyC");
+        for(int index=0; index<enemyA.Length;index++){
+            if(objectManager.GetPool("EnemyA")[index].activeSelf){
+                objectManager.GetPool("EnemyA")[index].SetActive(false);
+            }
+        }
+        for(int index=0; index<enemyB.Length;index++){
+            if(objectManager.GetPool("EnemyB")[index].activeSelf){
+                objectManager.GetPool("EnemyB")[index].SetActive(false);
+            }
+        }
+        for(int index=0; index<enemyC.Length;index++){
+            if(objectManager.GetPool("EnemyC")[index].activeSelf){
+                objectManager.GetPool("EnemyC")[index].SetActive(false);
+            }
+        }
+        // 모든 적군의 총알을 없앤다
+        GameObject[] bulletA = objectManager.GetPool("BulletEnemyA");
+        GameObject[] bulletB = objectManager.GetPool("BulletEnemyB");
+        for(int index=0; index<bulletA.Length;index++){
+            bulletA[index].SetActive(false);
+            bulletB[index].SetActive(false);
         }
     }
 }

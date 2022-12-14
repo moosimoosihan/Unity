@@ -39,17 +39,17 @@ public class ObjectManager : MonoBehaviour
     GameObject[] itemBoom;
     GameObject[] itemShield;
 
-    //미사일(플레이어 2번, 9번, 15번은 하드 오브젝트)
+    //미사일
     public GameObject bulletPlayer0Prefab;
     public GameObject bulletPlayer1Prefab;
-
+    public GameObject bulletPlayer2Prefab;
     public GameObject bulletPlayer3Prefab;
     public GameObject bulletPlayer4Prefab;
     public GameObject bulletPlayer5Prefab;
     public GameObject bulletPlayer6Prefab;
     public GameObject bulletPlayer7Prefab;
     public GameObject bulletPlayer8Prefab;
-
+    public GameObject bulletPlayer9Prefab;
     public GameObject bulletPlayer10Prefab;
     public GameObject bulletPlayer11Prefab;
 
@@ -75,18 +75,20 @@ public class ObjectManager : MonoBehaviour
     public GameObject bulletPlayer32Prefab;
     public GameObject bulletPlayer33Prefab;
 
+    public GameObject bulletPlayer35Prefab;
+
     public GameObject bulletEnemyAPrefab;
     public GameObject bulletEnemyBPrefab;
     GameObject[] bulletPlayer0; // 삽
     GameObject[] bulletPlayer1; // 삼지창
-                                // 돌
+    GameObject[] bulletPlayer2; // 돌
     GameObject[] bulletPlayer3; // 아이스 스피어
     GameObject[] bulletPlayer4; // 따발총
     GameObject[] bulletPlayer5; // 샷건
     GameObject[] bulletPlayer6; // 윈드포스
     GameObject[] bulletPlayer7; // 파이어 볼
     GameObject[] bulletPlayer8; // 체인 라이트닝
-                                // 물 오로라
+    GameObject[] bulletPlayer9; // 물 오로라
     GameObject[] bulletPlayer10; // 곡괭이
     GameObject[] bulletPlayer11; // 권총
                                  // 태풍
@@ -111,6 +113,8 @@ public class ObjectManager : MonoBehaviour
                                  // 새
     GameObject[] bulletPlayer32; // 새 공격
     GameObject[] bulletPlayer33; // 뱀
+                                 // 골렘
+    GameObject[] bulletPlayer35; // 호수
 
 
     GameObject[] bulletEnemyA;
@@ -143,9 +147,9 @@ public class ObjectManager : MonoBehaviour
         enemyE = new GameObject[1];
 
         //아이템
-        itemExp0 = new GameObject[200];
-        itemExp1 = new GameObject[200];
-        itemExp2 = new GameObject[100];
+        itemExp0 = new GameObject[2000];
+        itemExp1 = new GameObject[2000];
+        itemExp2 = new GameObject[2000];
         itemCoin0 = new GameObject[100];
         itemCoin1 = new GameObject[100];
         itemCoin2 = new GameObject[100];
@@ -157,14 +161,14 @@ public class ObjectManager : MonoBehaviour
         //미사일
         bulletPlayer0 = new GameObject[100];
         bulletPlayer1 = new GameObject[100];
-        
+        bulletPlayer2 = new GameObject[20];
         bulletPlayer3 = new GameObject[300];
         bulletPlayer4 = new GameObject[300];
         bulletPlayer5 = new GameObject[300];
         bulletPlayer6 = new GameObject[10];
         bulletPlayer7 = new GameObject[200];
         bulletPlayer8 = new GameObject[30];
-
+        bulletPlayer9 = new GameObject[1];
         bulletPlayer10 = new GameObject[30];
         bulletPlayer11 = new GameObject[100];
 
@@ -185,10 +189,12 @@ public class ObjectManager : MonoBehaviour
         bulletPlayer27 = new GameObject[10];
         bulletPlayer28 = new GameObject[5];
         bulletPlayer29 = new GameObject[20];
-        bulletPlayer30 = new GameObject[20];
+        bulletPlayer30 = new GameObject[100];
 
         bulletPlayer32 = new GameObject[30];
         bulletPlayer33 = new GameObject[1];
+
+        bulletPlayer35 = new GameObject[1];
 
         bulletEnemyA = new GameObject[500];
         bulletEnemyB = new GameObject[500];
@@ -279,7 +285,10 @@ public class ObjectManager : MonoBehaviour
             bulletPlayer1[index] = Instantiate(bulletPlayer1Prefab);
             bulletPlayer1[index].SetActive(false);
         }
-
+        for(int index=0;index<bulletPlayer2.Length;index++){
+            bulletPlayer2[index] = Instantiate(bulletPlayer2Prefab);
+            bulletPlayer2[index].SetActive(false);
+        }
         for(int index=0;index<bulletPlayer3.Length;index++){
             bulletPlayer3[index] = Instantiate(bulletPlayer3Prefab);
             bulletPlayer3[index].SetActive(false);
@@ -304,7 +313,10 @@ public class ObjectManager : MonoBehaviour
             bulletPlayer8[index] = Instantiate(bulletPlayer8Prefab);
             bulletPlayer8[index].SetActive(false);
         }
-
+        for(int index=0;index<bulletPlayer9.Length;index++){
+            bulletPlayer9[index] = Instantiate(bulletPlayer9Prefab);
+            bulletPlayer9[index].SetActive(false);
+        }
         for(int index=0;index<bulletPlayer10.Length;index++){
             bulletPlayer10[index] = Instantiate(bulletPlayer10Prefab);
             bulletPlayer10[index].SetActive(false);
@@ -378,6 +390,11 @@ public class ObjectManager : MonoBehaviour
         for(int index=0;index<bulletPlayer33.Length;index++){
             bulletPlayer33[index] = Instantiate(bulletPlayer33Prefab);
             bulletPlayer33[index].SetActive(false);
+        }
+
+        for(int index=0;index<bulletPlayer35.Length;index++){
+            bulletPlayer35[index] = Instantiate(bulletPlayer35Prefab);
+            bulletPlayer35[index].SetActive(false);
         }
 
         for(int index=0;index<bulletEnemyA.Length;index++){
@@ -470,6 +487,9 @@ public class ObjectManager : MonoBehaviour
             case "BulletPlayer1":
                 targetPool = bulletPlayer1;
                 break;
+            case "BulletPlayer2":
+                targetPool = bulletPlayer2;
+                break;
             case "BulletPlayer3":
                 targetPool = bulletPlayer3;
                 break;
@@ -487,6 +507,9 @@ public class ObjectManager : MonoBehaviour
                 break;
             case "BulletPlayer8":
                 targetPool = bulletPlayer8;
+                break;
+            case "BulletPlayer9":
+                targetPool = bulletPlayer9;
                 break;
             case "BulletPlayer10":
                 targetPool = bulletPlayer10;
@@ -538,6 +561,9 @@ public class ObjectManager : MonoBehaviour
             break;
             case "BulletPlayer33":
                 targetPool = bulletPlayer33;
+            break;
+            case "BulletPlayer35":
+                targetPool = bulletPlayer35;
             break;
             case "BulletEnemyA":
                 targetPool = bulletEnemyA;
@@ -632,6 +658,9 @@ public class ObjectManager : MonoBehaviour
             case "BulletPlayer1":
                 targetPool = bulletPlayer1;
                 break;
+            case "BulletPlayer2":
+                targetPool = bulletPlayer2;
+                break;
             case "BulletPlayer3":
                 targetPool = bulletPlayer3;
                 break;
@@ -649,6 +678,9 @@ public class ObjectManager : MonoBehaviour
                 break;
             case "BulletPlayer8":
                 targetPool = bulletPlayer8;
+                break;
+            case "BulletPlayer9":
+                targetPool = bulletPlayer9;
                 break;
             case "BulletPlayer10":
                 targetPool = bulletPlayer10;
@@ -700,6 +732,9 @@ public class ObjectManager : MonoBehaviour
             break;
             case "BulletPlayer33":
                 targetPool = bulletPlayer33;
+            break;
+            case "BulletPlayer35":
+                targetPool = bulletPlayer35;
             break;
             case "BulletEnemyA":
                 targetPool = bulletEnemyA;
