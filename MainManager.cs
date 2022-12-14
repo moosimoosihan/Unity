@@ -253,9 +253,19 @@ public class MainManager : MonoBehaviour
     }
     public void StateLevelPanelButton()
     {
+        toastTextObj.SetActive(true);
+        if (language == "English")
+        {
+            toastText.text = "Not yet...";
+        }
+        else if (language == "Korean")
+        {
+            toastText.text = "업데이트 중입니다..";
+        }
+
         // 해당 레벨을 불러와 그만큼 버튼을 활성화 시켜야 함 레벨마다 가격이 달라짐!
 
-        stateLevelPanel.SetActive(true);
+        // stateLevelPanel.SetActive(true);
     }
     public void HelpButton()
     {
@@ -267,11 +277,21 @@ public class MainManager : MonoBehaviour
     }
     public void InventoryPanelButton()
     {
-        //착용하고 있는것이 있다면 불러와서 장착
-        if(PlayerPrefs.HasKey("Slut1")){
-            
+        toastTextObj.SetActive(true);
+        if (language == "English")
+        {
+            toastText.text = "Not yet...";
         }
-        inventoryPanel.SetActive(true);
+        else if (language == "Korean")
+        {
+            toastText.text = "업데이트 중입니다..";
+        }
+
+        //착용하고 있는것이 있다면 불러와서 장착
+        //if (PlayerPrefs.HasKey("Slut1")){
+            
+        //}
+        //inventoryPanel.SetActive(true);
     }
     public void InventoryInfo(string name)
     {
@@ -351,7 +371,7 @@ public class MainManager : MonoBehaviour
         // 테스트 ca-app-pub-3940256099942544/6300978111
         // 광고 ca-app-pub-4730748511418289/9025837610
         #if UNITY_ANDROID
-            string adUnitId = "ca-app-pub-4730748511418289/9025837610";
+            string adUnitId = "ca-app-pub-3940256099942544/6300978111";
         #elif UNITY_IPHONE
             string adUnitId = "ca-app-pub-3940256099942544/2934735716";
         #else

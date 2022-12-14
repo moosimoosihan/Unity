@@ -511,7 +511,7 @@ public class GameManager : MonoBehaviour
                 enemyIndex = 1;
                 break;
             case "Event1":
-                enemyIndex = 4;
+                enemyIndex = 5;
                 eventPanel.SetActive(true);
                 camAnim.SetBool("IsOn",true);
                 if(language == "English"){
@@ -521,12 +521,12 @@ public class GameManager : MonoBehaviour
                 }
                 break;
             case "EventOut":
-                enemyIndex = 4;
+                enemyIndex = 5;
                 //적군이 더 이상 없을 경우 아웃(혹시 있다면 시간을 딜레이)
                 camAnim.SetBool("IsOn",false);
             break;
             case "Event2":
-                enemyIndex = 4;
+                enemyIndex = 5;
                 eventPanel.SetActive(true);
                 camAnim.SetBool("IsOn",true);
                 if(language == "English"){
@@ -537,7 +537,7 @@ public class GameManager : MonoBehaviour
             break;
             case "SS":
                 spawnEnd = true;
-                enemyIndex = 4;
+                enemyIndex = 5;
             break;
         }
         int enemyPoint = spawnList[spawnIndex].point;
@@ -1060,7 +1060,7 @@ public class GameManager : MonoBehaviour
     void BoxCreat()
     {
         if(boxCreatTime<=0){
-            int ranTime = Random.Range(5,11);
+            int ranTime = Random.Range(30,60);
             boxCreatTime = ranTime;
             int ran = Random.Range(0,spawnPoints.Length-1);
             GameObject enemy = objectManager.MakeObj(enemyObjs[0]);
