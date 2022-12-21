@@ -615,7 +615,7 @@ public class GameManager : MonoBehaviour
         //플레이어를 따라가는 UI
         playerUI.transform.position = Camera.main.WorldToScreenPoint(player.transform.position + new Vector3(0, -0.4f, 0));
 
-        if(enemyCount <= 0 && spawnEnd && !bossClear){
+        if(enemyCount <= 5 && spawnEnd && !bossClear){
             spawnEnd = false;
         }
         if(isBoss || stageEnd){

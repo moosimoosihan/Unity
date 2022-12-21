@@ -71,24 +71,50 @@ public class MainManager : MonoBehaviour
         character = "Wizard";
         characterNum = 0;
         clearStage = 1;
-        if(PlayerPrefs.HasKey("GrobalGold")){ // 골드가 저장된게 있다면
+        grobalGold = 0;
+        stateLevel = 0;
+        if (PlayerPrefs.HasKey("GrobalGold")){ // 골드가 저장된게 있다면
             grobalGold = PlayerPrefs.GetInt("GrobalGold");
+        }else
+        {
+            PlayerPrefs.SetInt("GrobalGold", grobalGold);
         }
         if(PlayerPrefs.HasKey("Character")){ // 저장된 케릭터가 있다면
             character = PlayerPrefs.GetString("Character");
         }
-        if(PlayerPrefs.HasKey("CharacterNum")){ // 저장된 케릭터가 있다면
+        else
+        {
+            PlayerPrefs.SetString("Character", character);
+        }
+        if (PlayerPrefs.HasKey("CharacterNum")){ // 저장된 케릭터가 있다면
             characterNum = PlayerPrefs.GetInt("CharacterNum");
         }
-        if(PlayerPrefs.HasKey("Language")){ // 저장된 언어가 있다면
+        else
+        {
+            PlayerPrefs.SetInt("CharacterNum", characterNum);
+        }
+        if (PlayerPrefs.HasKey("Language")){ // 저장된 언어가 있다면
             language = PlayerPrefs.GetString("Language");
         }
-        if(PlayerPrefs.HasKey("ClearStage")){ // 저장된 클리어 스테이지 수 가 있다면
+        else
+        {
+            PlayerPrefs.SetString("Language", language);
+        }
+        if (PlayerPrefs.HasKey("ClearStage")){ // 저장된 클리어 스테이지 수 가 있다면
             clearStage = PlayerPrefs.GetInt("ClearStage");
         }
-        if(PlayerPrefs.HasKey("StateLevel")){ // 스탯 저장된 내용이 있다면
-            stateLevel = PlayerPrefs.GetInt("AttackLevel");
+        else
+        {
+            PlayerPrefs.SetInt("ClearStage", clearStage);
         }
+        if (PlayerPrefs.HasKey("StateLevel")){ // 스탯 저장된 내용이 있다면
+            stateLevel = PlayerPrefs.GetInt("StateLevel");
+        }
+        else
+        {
+            PlayerPrefs.SetInt("StateLevel", stateLevel);
+        }
+
         stage = clearStage;
         PlayerPrefs.Save();
         if(language == "English" || language == null){
