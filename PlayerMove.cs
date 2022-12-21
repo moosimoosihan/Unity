@@ -63,6 +63,7 @@ public class PlayerMove : MonoBehaviour
     float passiveShootDelay = 1f;
     float passiveHealingCount; //따로 체력 10초 세어서 회복
     float passiveHealingTimeCount; // 체력 1초 간격
+    float curMaxLife; // 기본 체력
 
     //이동 관련 함수
     public Vector2 inputVec;
@@ -103,6 +104,8 @@ public class PlayerMove : MonoBehaviour
     // 플레이어를 따라다니는 오브젝트 모음
     public GameObject playerFollowObj;
 
+    float playerDamagedTime;
+
     void Start()
     {
         //모든 무기 레벨을 0으로 초기화
@@ -134,6 +137,7 @@ public class PlayerMove : MonoBehaviour
             break;
         }
         maxLife=life;
+        curMaxLife = maxLife;
     }
     void Awake()
     {
@@ -173,7 +177,7 @@ public class PlayerMove : MonoBehaviour
                 targetImage.SetActive(true);
                 targetImage.transform.position = targetEnemy.transform.position;
             } else {
-                targetImage.SetActive(false);
+                targetImage.transform.position = new Vector2(transform.position.x+0.5f,transform.position.y);
             }
             playerFollowObj.transform.position = transform.position;
 
@@ -232,8 +236,13 @@ public class PlayerMove : MonoBehaviour
                     shieldCount += Time.deltaTime;
                 }
             } else {
-                EnemyMove enemy = other.gameObject.GetComponent<EnemyMove>();
-                PlayerDamaged(enemy.power);
+                if(playerDamagedTime>=1){
+                    PlayerDamaged(other.gameObject, "Enemy");
+                    playerDamagedTime = 0;
+                } else {
+                    spriteRenderer.color = new Color(1,0,0);
+                    playerDamagedTime += Time.deltaTime;
+                }
             }
         }
     }
@@ -244,11 +253,23 @@ public class PlayerMove : MonoBehaviour
         if(other.gameObject.tag == "PlayerObj"){
             PlayerObj lakeLogic = other.gameObject.GetComponent<PlayerObj>();
             if(lakeLogic.type == "Lake"){
-                healingCount += Time.deltaTime;
                 if(healingCount>=5){
                     Healing(lakeLogic.power*0.05f);
                     healingCount = 0;
+                } else {
+                    healingCount += Time.deltaTime;
                 }
+            }
+        } else if(other.gameObject.tag == "EnemyBullet")
+        {
+            if (playerDamagedTime >= 1)
+            {
+                PlayerRed();
+                PlayerDamaged(other.gameObject, "Bullet");
+                playerDamagedTime = 0;
+            } else
+            {
+                playerDamagedTime += Time.deltaTime;
             }
         }
     }
@@ -264,14 +285,43 @@ public class PlayerMove : MonoBehaviour
         Invoke("ReturnSprite",0.2f);
     }
     //플레이어 데미지
-    public void PlayerDamaged(float dmg)
+    public void PlayerDamaged(GameObject target, string type)
     {
-        spriteRenderer.color = new Color(1,0,0);
-        //해당 적군을 찾아서 해당 적군의 데미지가 초당 들어가라
-        life -= dmg * Time.deltaTime;
+        if(type=="Enemy"){
+            //해당 적군을 찾아서 해당 적군의 데미지가 들어가라
+            //맞은 데미지 출력
+            EnemyMove enemyLogic = target.GetComponent<EnemyMove>();
+            float dmg = enemyLogic.CriticalHit(enemyLogic.power);
+            gameManager.DamageText(transform.position, dmg, enemyLogic.elementalType, enemyLogic.isCritical);
+            life -= dmg;
+
+            //적군 공격 타입 별 플레이어 데미지 입는 함수
+            if(enemyLogic.elementalType =="Fire"){
+
+            } else if(enemyLogic.elementalType =="Ice") {
+
+            } else if(enemyLogic.elementalType =="Lightning"){
+
+            } else if(enemyLogic.elementalType =="Water"){
+
+            }
+        } else if(type=="Bullet"){
+            Bullet bullet = target.gameObject.GetComponent<Bullet>();
+            gameManager.DamageText(transform.position, bullet.power, bullet.elementalType, bullet.enemyCritical);
+            life -= bullet.power;
+            PlayerRed();
+            if (bullet.enemyWeapon && !bullet.throwBullet)
+            {
+                target.gameObject.SetActive(false);
+            }
+
+        } else if(type=="Effect"){
+            Effect effect = target.gameObject.GetComponent<Effect>();
+            gameManager.DamageText(transform.position, effect.power, effect.elementalType, false);
+            life -= effect.power;
+            PlayerRed();
+        }
     }
-    //플레이어 화염 데미지
-    //한번에 구현 할 필요 있음!
 
     void OnCollisionEnter2D(Collision2D other) {
          if (other.gameObject.tag == "Enemy") {
@@ -290,19 +340,20 @@ public class PlayerMove : MonoBehaviour
                 EnemyMove enemy = other.gameObject.GetComponent<EnemyMove>();
                 life -= enemy.power;
             }
-         }
+        }
     }
     void OnTriggerEnter2D(Collider2D other) {
         if(other.gameObject.tag == "EnemyBullet"){
             if(isShield){ // 총알에 맞으면 쉴드가 바로 없어짐
                 isShield = false;
                 shieldCount = 0;
-                other.gameObject.SetActive(false);
+                Bullet bullet = other.GetComponent<Bullet>();
+                if (bullet.weaponType != -2)
+                {
+                    other.gameObject.SetActive(false);
+                }
             } else {
-                Bullet bullet = other.gameObject.GetComponent<Bullet>();
-                life -= bullet.power;
-                PlayerRed();
-                other.gameObject.SetActive(false);
+                PlayerDamaged(other.gameObject, "Bullet");
             }
             
         } else if(other.gameObject.tag == "Item"){
@@ -336,11 +387,11 @@ public class PlayerMove : MonoBehaviour
                 break;
                 //경험치 50
                 case "Exp1":
-                    exp += 50;
+                    exp += 30;
                 break;
                 //경험치 100
                 case "Exp2":
-                    exp += 100;
+                    exp += 50;
                 break;
                 //동전0
                 case "Coin0":
@@ -372,6 +423,8 @@ public class PlayerMove : MonoBehaviour
                 break;
             }
             other.gameObject.SetActive(false);
+        } else if(other.gameObject.tag == "Effect"){ //과부화 폭발 데미지
+            PlayerDamaged(other.gameObject,"Effect");
         }
     }
     void ReturnSprite()
@@ -382,7 +435,7 @@ public class PlayerMove : MonoBehaviour
     //미사일이 발사되는 함수
     void Fire()
     {
-        if(curShootDelay < realDelay || !targetImage.activeSelf){
+        if(curShootDelay < realDelay){
             return;
         }
 
@@ -391,22 +444,22 @@ public class PlayerMove : MonoBehaviour
         // 아이스 스피어 (데미지 증가 스케일 업)
         switch(weaponLevel[0]){
             case 1:
-                WeaponIceSpear(50, 1f,false);
+                WeaponIceSpear(80, 1f, 0,false);
             break;
             case 2:
-                WeaponIceSpear(100, 1.2f,false);
+                WeaponIceSpear(120, 1.2f, 1,false);
             break;
             case 3:
-                WeaponIceSpear(150, 1.3f,false);
+                WeaponIceSpear(170, 1.3f, 1,false);
             break;
             case 4:
-                WeaponIceSpear(200, 1.4f,false);
+                WeaponIceSpear(220, 1.4f, 2,false);
             break;
             case 5:
-                WeaponIceSpear(250, 1.5f,false);
+                WeaponIceSpear(270, 1.5f, 2,false);
             break;
             case 6:
-                WeaponIceSpear(500, 1.8f,true);
+                WeaponIceSpear(500, 1.8f, 3,true);
             break;
             }
             //윈드포스
@@ -460,22 +513,22 @@ public class PlayerMove : MonoBehaviour
             }
             switch(weaponLevel[2]){//파이어 볼
             case 1:
-                WeaponFireBall(50f, 1f, false);
+                WeaponFireBall(50f, 1f, 0, false);
             break;
             case 2:
-                WeaponFireBall(80f, 1.2f, false);
+                WeaponFireBall(80f, 1.2f, 1, false);
             break;
             case 3:
-                WeaponFireBall(120f, 1.4f, false);
+                WeaponFireBall(120f, 1.4f, 1, false);
             break;
             case 4:
-                WeaponFireBall(150f, 1.6f, false);
+                WeaponFireBall(150f, 1.6f, 2,false);
             break;
             case 5:
-                WeaponFireBall(190f, 1.8f, false);
+                WeaponFireBall(190f, 1.8f, 2,false);
             break;
             case 6:
-                WeaponFireBall(250f, 2f, true);
+                WeaponFireBall(250f, 2f, 3,true);
             break;
             }
             switch(weaponLevel[3]){// 체인 라이트닝
@@ -651,64 +704,64 @@ public class PlayerMove : MonoBehaviour
                     //곡괭이
                     switch(weaponLevel[0]){
                         case 1:
-                            WeaponPickaxe(120,1,false);
+                            WeaponPickaxe(120,1,1,false);
                         break;
                         case 2:
-                            WeaponPickaxe(200,2,false);
+                            WeaponPickaxe(200,2,1,false);
                         break;
                         case 3:
-                            WeaponPickaxe(300,3,false);
+                            WeaponPickaxe(300,3,2,false);
                         break;
                         case 4:
-                            WeaponPickaxe(400,4,false);
+                            WeaponPickaxe(400,4,2,false);
                         break;
                         case 5:
-                            WeaponPickaxe(600,5,false);
+                            WeaponPickaxe(600,5,3,false);
                         break;
                         case 6:
-                            WeaponPickaxe(800,5,true);
+                            WeaponPickaxe(800,5,3,true);
                         break;
                     }
                     //아래로 던지는 관통 삽
                     switch(weaponLevel[1]){
                         case 1:
-                            WeaponShovel(100,1);
+                            WeaponShovel(100,1,1);
                         break;
                         case 2:
-                            WeaponShovel(200,2);
+                            WeaponShovel(200,2,1);
                         break;
                         case 3:
-                            WeaponShovel(300,3);
+                            WeaponShovel(300,3,2);
                         break; 
                         case 4:
-                            WeaponShovel(400,4);
+                            WeaponShovel(400,4,2);
                         break;
                         case 5:
-                            WeaponShovel(500,5);
+                            WeaponShovel(500,5,3);
                         break;
                         case 6:
-                            WeaponShovel(600,10);
+                            WeaponShovel(600,10,3);
                         break;
                         }
                     //관통 창 무기
                     switch(weaponLevel[2]){
                         case 1:
-                            WeaponTrident(80,0.5f,false);
+                            WeaponTrident(80,0.5f,1,false);
                         break;
                         case 2:                
-                            WeaponTrident(160,0.7f,false);
+                            WeaponTrident(160,0.7f,1,false);
                         break;
                         case 3:                
-                            WeaponTrident(240,0.9f,false);
+                            WeaponTrident(240,0.9f,2,false);
                         break;
                         case 4:                
-                            WeaponTrident(320,1.4f,false);
+                            WeaponTrident(320,1.4f,2,false);
                         break;
                         case 5:                
-                            WeaponTrident(400,1.8f,false);
+                            WeaponTrident(400,1.8f,3,false);
                         break;
                         case 6:                
-                            WeaponTrident(500,1.8f,true);
+                            WeaponTrident(500,1.8f,3,true);
                         break;
                     }
                     weaponHunter2Count = 0;
@@ -847,11 +900,11 @@ public class PlayerMove : MonoBehaviour
                         MaceAttack(500,250,true);
                     break;
                 }
-                switch(weaponLevel[3]){ // 5초마다 빠르게 전진하며 적군을 밀쳐내며 공격
+                switch(weaponLevel[3]){ // 3초마다 빠르게 전진하며 적군을 밀쳐내며 공격
                     case 1:
-                        //2초 빠르게 달리고 5초 쉬고
+                        //3초 빠르게 달리고 3초 쉬고
                         if(horseCount<=0){
-                            horseCount = 7;
+                            horseCount = 6;
                             HorseAttack(50,false);
                         } else {
                             horseCount--;
@@ -859,7 +912,7 @@ public class PlayerMove : MonoBehaviour
                     break;
                     case 2:
                         if(horseCount<=0){
-                            horseCount = 7;
+                            horseCount = 6;
                             HorseAttack(100,false);
                         } else {
                             horseCount--;
@@ -867,7 +920,7 @@ public class PlayerMove : MonoBehaviour
                     break;
                     case 3:
                         if(horseCount<=0){
-                            horseCount = 7;
+                            horseCount = 6;
                             HorseAttack(140,false);
                         } else {
                             horseCount--;
@@ -875,7 +928,7 @@ public class PlayerMove : MonoBehaviour
                     break;
                     case 4:
                         if(horseCount<=0){
-                            horseCount = 7;
+                            horseCount = 6;
                             HorseAttack(200,false);
                         } else {
                             horseCount--;
@@ -883,7 +936,7 @@ public class PlayerMove : MonoBehaviour
                     break;
                     case 5:
                         if(horseCount<=0){
-                            horseCount = 7;
+                            horseCount = 6;
                             HorseAttack(240,false);
                         } else {
                             horseCount--;
@@ -891,7 +944,7 @@ public class PlayerMove : MonoBehaviour
                     break;
                     case 6:
                         if(horseCount<=0){
-                            horseCount = 7;
+                            horseCount = 6;
                             HorseAttack(300,true);
                         } else {
                             horseCount--;
@@ -1039,28 +1092,28 @@ public class PlayerMove : MonoBehaviour
                 }
                 switch(weaponLevel[1]){ // 2 파동
                     case 1:
-                        EnergyForce2(20,false);
+                        EnergyForce2(20,0,false);
                     break;
                     case 2:
-                        EnergyForce2(40,false);
+                        EnergyForce2(40,1,false);
                     break;
                     case 3:
-                        EnergyForce2(60,false);
+                        EnergyForce2(60,1,false);
                     break;
                     case 4:
-                        EnergyForce2(80,false);
+                        EnergyForce2(80,2,false);
                     break;
                     case 5:
-                        EnergyForce2(100,false);
+                        EnergyForce2(100,2,false);
                     break;
                     case 6:
-                        EnergyForce2(150,true);
+                        EnergyForce2(150,3,true);
                     break;
                 }
                 switch(weaponLevel[2]){ // 랜덤 물체
                     case 1:
                         if(randomThrowCount<=0){
-                            RandomThrow(1,false);
+                            RandomThrow(1,0,false);
                             randomThrowCount = 3;
                         } else {
                             randomThrowCount--;
@@ -1068,7 +1121,7 @@ public class PlayerMove : MonoBehaviour
                     break;
                     case 2:
                         if(randomThrowCount<=0){
-                            RandomThrow(2,false);
+                            RandomThrow(2,1,false);
                             randomThrowCount = 3;
                         } else {
                             randomThrowCount--;
@@ -1076,7 +1129,7 @@ public class PlayerMove : MonoBehaviour
                     break;
                     case 3:
                         if(randomThrowCount<=0){
-                            RandomThrow(3,false);
+                            RandomThrow(3,1,false);
                             randomThrowCount = 3;
                         } else {
                             randomThrowCount--;
@@ -1084,7 +1137,7 @@ public class PlayerMove : MonoBehaviour
                     break;
                     case 4:
                         if(randomThrowCount<=0){
-                            RandomThrow(4,false);
+                            RandomThrow(4,2,false);
                             randomThrowCount = 3;
                         } else {
                             randomThrowCount--;
@@ -1092,7 +1145,7 @@ public class PlayerMove : MonoBehaviour
                     break;
                     case 5:
                         if(randomThrowCount<=0){
-                            RandomThrow(5,false);
+                            RandomThrow(5,2,false);
                             randomThrowCount = 3;
                         } else {
                             randomThrowCount--;
@@ -1100,7 +1153,7 @@ public class PlayerMove : MonoBehaviour
                     break;
                     case 6:
                         if(randomThrowCount<=0){
-                            RandomThrow(6,true);
+                            RandomThrow(6,3,true);
                             randomThrowCount = 3;
                         } else {
                             randomThrowCount--;
@@ -1110,7 +1163,7 @@ public class PlayerMove : MonoBehaviour
                 switch(weaponLevel[3]){ // 지뢰
                     case 1:
                         if(trapCount<=0){
-                            TrapCreat(80, 2f);
+                            TrapCreat(80, 2.5f);
                             trapCount=2;
                         } else {
                             trapCount--;
@@ -1118,7 +1171,7 @@ public class PlayerMove : MonoBehaviour
                     break;
                     case 2:
                         if(trapCount<=0){
-                            TrapCreat(160, 2.2f);
+                            TrapCreat(160, 2.8f);
                             trapCount=2;
                         } else {
                             trapCount--;
@@ -1126,7 +1179,7 @@ public class PlayerMove : MonoBehaviour
                     break;
                     case 3:
                         if(trapCount<=0){
-                            TrapCreat(240, 2.4f);
+                            TrapCreat(240, 3.1f);
                             trapCount=2;
                         } else {
                             trapCount--;
@@ -1134,7 +1187,7 @@ public class PlayerMove : MonoBehaviour
                     break;
                     case 4:
                         if(trapCount<=0){
-                            TrapCreat(320, 2.6f);
+                            TrapCreat(320, 3.5f);
                             trapCount=2;
                         } else {
                             trapCount--;
@@ -1142,14 +1195,14 @@ public class PlayerMove : MonoBehaviour
                     break;
                     case 5:
                         if(trapCount<=0){
-                            TrapCreat(400, 2.8f);
+                            TrapCreat(400, 4.0f);
                             trapCount=2;
                         } else {
                             trapCount--;
                         }
                     break;
                     case 6:
-                        TrapCreat(480, 3f);
+                        TrapCreat(480, 4.5f);
                     break;
                 }
                 switch(weaponLevel[4]){ // 포탑 설치
@@ -1496,7 +1549,7 @@ public class PlayerMove : MonoBehaviour
     }
     void Weapon4Fire()
     {
-        if(gameManager.character != "Hunter" || weapon4Count < weapon4MaxCount || !targetImage.activeSelf)
+        if(gameManager.character != "Hunter" || weapon4Count < weapon4MaxCount)
             return;
 
         //따발총(총알 딜레이 감소)
@@ -1650,31 +1703,31 @@ public class PlayerMove : MonoBehaviour
             case 1:
             if(!passiveLevel[2,0]){
                 passiveLevel[2,0] = true;
-                maxLife += 0.09f + 0.01f;
+                maxLife += curMaxLife * (0.09f + 0.01f);
             }
             break;
             case 2:
             if(!passiveLevel[2,1]){
                 passiveLevel[2,1] = true;
-                maxLife += 0.09f + 0.01f;
+                maxLife += curMaxLife * (0.09f + 0.01f);
             }
             break;
             case 3:
             if(!passiveLevel[2,2]){
                 passiveLevel[2,2] = true;
-                maxLife += 0.09f + 0.01f;
+                maxLife += curMaxLife * (0.09f + 0.01f);
             }
             break;
             case 4:
             if(!passiveLevel[2,3]){
                 passiveLevel[2,3] = true;
-                maxLife += 0.09f + 0.01f;
+                maxLife += curMaxLife * (0.09f + 0.01f);
             }
             break;
             case 5:
             if(!passiveLevel[2,4]){
                 passiveLevel[2,4] = true;
-                maxLife += 0.09f + 0.01f;
+                maxLife += curMaxLife * (0.09f + 0.01f);
             }
             break;
         }
@@ -1796,7 +1849,7 @@ public class PlayerMove : MonoBehaviour
         weapon4Count += Time.deltaTime;
         weapon4MaxCount = maxShootDelay/weapon4Delay;
     }
-    void WeaponShovel(float dmg,int num)
+    void WeaponShovel(float dmg,int num, int count)
     {
         for (int i=0;i<num;i++){
             float ranX = Random.Range(-2f,2f);
@@ -1806,19 +1859,21 @@ public class PlayerMove : MonoBehaviour
             Rigidbody2D rigid = bullet.GetComponent<Rigidbody2D>();
             Bullet bulletLogic = bullet.GetComponent<Bullet>();
             bulletLogic.power = dmg * power;
+            bulletLogic.matchCount += count;
 
             //회전 함수
             Vector3 dirVec = new Vector3(ranX, -7.5f, ranZ);
             rigid.AddForce(dirVec, ForceMode2D.Impulse);
         }
     }
-    void WeaponTrident(float dmg, float scale, bool maxLevel)
+    void WeaponTrident(float dmg, float scale, int count,bool maxLevel)
     {
         GameObject bullet = objectManager.MakeObj("BulletPlayer1");
         Bullet bulletLogic = bullet.GetComponent<Bullet>();
         bullet.transform.position = transform.position;
         Rigidbody2D rigid = bullet.GetComponent<Rigidbody2D>();
         bulletLogic.power = dmg * power;
+        bulletLogic.matchCount += count;
 
         //회전 함수
         float degree = Mathf.Atan2(transform.position.y-targetImage.transform.position.y,transform.position.x-targetImage.transform.position.x)*180f/Mathf.PI;
@@ -1842,7 +1897,7 @@ public class PlayerMove : MonoBehaviour
             rigid2.AddForce(-dirVec2.normalized * bulletSpeed, ForceMode2D.Impulse);
         }
     }
-    void WeaponIceSpear(float dmg, float scale, bool maxLevel)
+    void WeaponIceSpear(float dmg, float scale, int count, bool maxLevel)
     {
         GameObject bullet = objectManager.MakeObj("BulletPlayer3");
         Bullet bulletLogic = bullet.GetComponent<Bullet>();
@@ -1850,6 +1905,7 @@ public class PlayerMove : MonoBehaviour
         Rigidbody2D rigid = bullet.GetComponent<Rigidbody2D>();
         bulletLogic.power = dmg * power;
         bulletLogic.maxLevel = maxLevel;
+        bulletLogic.matchCount += count;
         
         //회전 함수
         float degree = Mathf.Atan2(transform.position.y-targetImage.transform.position.y,transform.position.x-targetImage.transform.position.x)*180f/Mathf.PI;
@@ -1922,7 +1978,7 @@ public class PlayerMove : MonoBehaviour
         bullet.transform.position = transform.position;
         weapon6Count = 0;
     }
-    void WeaponFireBall(float dmg, float scale, bool maxLevel)
+    void WeaponFireBall(float dmg, float scale, int count, bool maxLevel)
     {
         if(!maxLevel){
             GameObject bullet = objectManager.MakeObj("BulletPlayer7");
@@ -1934,6 +1990,7 @@ public class PlayerMove : MonoBehaviour
             bullet.transform.localScale = new Vector3(scale,scale,0);
             Vector3 dirVec = targetImage.transform.position - transform.position;
             rigid.AddForce(dirVec.normalized * bulletSpeed/3, ForceMode2D.Impulse);
+            bulletLogic.matchCount += count;
         } else {
             if(weaponCrazyFireCount>=3){
                 weaponCrazyFireCount=0;
@@ -1943,7 +2000,7 @@ public class PlayerMove : MonoBehaviour
                     bullet.transform.position = transform.position;
                     Bullet bulletLogic = bullet.GetComponent<Bullet>();
                     Rigidbody2D rigid = bullet.GetComponent<Rigidbody2D>();
-                    bulletLogic.matchCount += 2;
+                    bulletLogic.matchCount += count;
 
                     bulletLogic.power = dmg;
                     bullet.transform.localScale = new Vector3(scale,scale,0);
@@ -1963,7 +2020,7 @@ public class PlayerMove : MonoBehaviour
                     bullet.transform.position = transform.position;
                     Bullet bulletLogic = bullet.GetComponent<Bullet>();
                     Rigidbody2D rigid = bullet.GetComponent<Rigidbody2D>();
-                    bulletLogic.matchCount += 2;
+                    bulletLogic.matchCount += count;
 
                     bulletLogic.power = dmg;
                     bullet.transform.localScale = new Vector3(scale,scale,0);
@@ -1983,7 +2040,7 @@ public class PlayerMove : MonoBehaviour
                     bullet.transform.position = transform.position;
                     Bullet bulletLogic = bullet.GetComponent<Bullet>();
                     Rigidbody2D rigid = bullet.GetComponent<Rigidbody2D>();
-                    bulletLogic.matchCount += 2;
+                    bulletLogic.matchCount += count;
 
                     bulletLogic.power = dmg;
                     bullet.transform.localScale = new Vector3(scale,scale,0);
@@ -2027,7 +2084,7 @@ public class PlayerMove : MonoBehaviour
             }
         }
     }
-    void WeaponPickaxe(float dmg, int num, bool maxLevel)
+    void WeaponPickaxe(float dmg, int num, int count, bool maxLevel)
     {
         for(int index = 0;index < num;index++){
             float ranX = Random.Range(-2f,2f);
@@ -2037,6 +2094,7 @@ public class PlayerMove : MonoBehaviour
             Rigidbody2D rigid = bullet.GetComponent<Rigidbody2D>();
             Bullet bulletLogic = bullet.GetComponent<Bullet>();
             bulletLogic.power = dmg * power;
+            bulletLogic.matchCount += count;
             if(maxLevel){
                 bullet.transform.localScale = new Vector3(2,2,0);
             }
@@ -2151,6 +2209,8 @@ public class PlayerMove : MonoBehaviour
 
         bulletLogic.power = dmg * power;
         if(maxLevel){
+            shieldCount = 0f;
+            isShield = true;
             PointEffector2D point = horseAttackObj.GetComponent<PointEffector2D>();
             point.forceMagnitude = 400;
         }
@@ -2192,7 +2252,7 @@ public class PlayerMove : MonoBehaviour
         bulletLogic.maxLevel = maxLevel;
     }
     // 에너지 파동2
-    void EnergyForce2(float dmg, bool maxLevel)
+    void EnergyForce2(float dmg, int count, bool maxLevel)
     {
         GameObject bullet = objectManager.MakeObj("BulletPlayer22");
         Bullet bulletLogic = bullet.GetComponent<Bullet>();
@@ -2200,6 +2260,7 @@ public class PlayerMove : MonoBehaviour
         bulletLogic.power = dmg * power;
         Vector3 dirVec = targetImage.transform.position - transform.position;
         bullet.transform.position = transform.position;
+        bulletLogic.matchCount += count;
 
         //회전 함수
         float degree = Mathf.Atan2(transform.position.y-targetImage.transform.position.y,transform.position.x-targetImage.transform.position.x)*180f/Mathf.PI;
@@ -2208,15 +2269,15 @@ public class PlayerMove : MonoBehaviour
         bulletLogic.maxLevel = maxLevel;
     }
     // 랜덤하게 스킬사용
-    void RandomThrow(int level, bool maxLevel)
+    void RandomThrow(int level, int count, bool maxLevel)
     {
         float ran = Random.Range(0.0f,100.0f);
         if(ran<12.5f){ // 12.5% 곡괭이
-            WeaponPickaxe(120 * level,1 * level,maxLevel);
+            WeaponPickaxe(120 * level,1 * level, count,maxLevel);
         } else if (ran<25f){ // 12.5% 아이스 스피어
-            WeaponIceSpear(50 * level, 1f,maxLevel);
+            WeaponIceSpear(50 * level, 1f, count,maxLevel);
         } else if (ran<37.5f){ // 12.5% 삼지창
-            WeaponTrident(80 * level,0.5f + level/10,maxLevel);
+            WeaponTrident(80 * level,0.5f + level/10, count,maxLevel);
         } else if(ran<50f){ // 12.5% 돌아가는 망치
             ThrowHammer(50 * level,maxLevel);
         } else if(ran<62.5f){ // 12.5% 윈드 포스
@@ -2227,9 +2288,9 @@ public class PlayerMove : MonoBehaviour
             }
         } else if(ran<75f){ // 12.5% 삽
             if(maxLevel){
-                WeaponShovel(100 * level,2 * level);
+                WeaponShovel(100 * level,2 * level, count);
             } else{
-                WeaponShovel(100 * level,1 * level);
+                WeaponShovel(100 * level,1 * level, count);
             }
         } else if(ran<87.5f){ // 12.5% 체인 라이트닝
             WeaponChainLightning(40 * level, 1+level,maxLevel);
@@ -2306,6 +2367,7 @@ public class PlayerMove : MonoBehaviour
         } else {
             PlayerObj bear = bearObj.GetComponent<PlayerObj>();
             bear.life = objLife;
+            bear.maxLife = objLife;
             bearObj.SetActive(true);
             bear.power = dmg * power;
             Vector2 pos = new Vector2(transform.position.x+1f,transform.position.y);
@@ -2313,7 +2375,6 @@ public class PlayerMove : MonoBehaviour
         }
         if(maxLevel){
             PlayerObj bear = bearObj.GetComponent<PlayerObj>();
-            bear.power = dmg * power;
             bear.speed = 2f;
             bear.maxLevel = maxLevel;
         } else {
@@ -2330,22 +2391,26 @@ public class PlayerMove : MonoBehaviour
                 GameObject skull = objectManager.MakeObj("BulletPlayer28");
                 PlayerObj skullLogic = skull.GetComponent<PlayerObj>();
                 skullLogic.life = objLife;
+                skullLogic.maxLife = objLife;
                 skullLogic.type = "Skull";
                 skullLogic.power = dmg * power;
                 skullLogic.maxLevel = maxLevel;
                 Vector2 pos = new Vector2(transform.position.x+1f,transform.position.y);
                 skull.transform.position = pos;
                 skullCount++;
+                skullLogic.elementalType = "None";
             } else if(ran == 1){ // 궁수
                 GameObject bowSkull = objectManager.MakeObj("BulletPlayer28");
                 Vector2 pos = new Vector2(transform.position.x+1f,transform.position.y);
                 PlayerObj bowSkullLogic = bowSkull.GetComponent<PlayerObj>();
                 bowSkullLogic.life = objLife*0.8f;
+                bowSkullLogic.maxLife = objLife*0.8f;
                 bowSkullLogic.type = "BowSkull";
                 bowSkullLogic.power = (dmg*1.1f) * power;
                 bowSkullLogic.maxLevel = maxLevel;
                 bowSkull.transform.position = pos;
                 skullCount++;
+                bowSkullLogic.elementalType = "None";
             }
         }
     }
@@ -2436,10 +2501,14 @@ public class PlayerMove : MonoBehaviour
                 PlayerObj golemLogic = golemObj.GetComponent<PlayerObj>();
                 golemLogic.type = "IceGolem";
                 golemLogic.life = life;
+                golemLogic.maxLife = life;
                 golemLogic.power = dmg * power;
                 Vector2 pos = new Vector2(transform.position.x+1f,transform.position.y);
                 golemObj.transform.position = pos;
                 golemLogic.maxLevel = maxLevel;
+                SpriteRenderer spriteRenderer = golemObj.GetComponent<SpriteRenderer>();
+                spriteRenderer.color = new Color(1,1,1);
+                golemLogic.elementalType = "Ice";
             } else {
                 PlayerObj golem = golemObj.GetComponent<PlayerObj>();
                 golem.power = dmg * power;
@@ -2452,10 +2521,14 @@ public class PlayerMove : MonoBehaviour
                 PlayerObj golemLogic = golemObj.GetComponent<PlayerObj>();
                 golemLogic.type = "FireGolem";
                 golemLogic.life = life;
+                golemLogic.maxLife = life;
                 golemLogic.power = (dmg * power) * 0.8f;
                 Vector2 pos = new Vector2(transform.position.x+1f,transform.position.y);
                 golemObj.transform.position = pos;
                 golemLogic.maxLevel = maxLevel;
+                SpriteRenderer spriteRenderer = golemObj.GetComponent<SpriteRenderer>();
+                spriteRenderer.color = new Color(0.7f,0,0);
+                golemLogic.elementalType = "Fire";
             } else {
                 PlayerObj golem = golemObj.GetComponent<PlayerObj>();
                 golem.power = dmg * power;
@@ -2468,10 +2541,14 @@ public class PlayerMove : MonoBehaviour
                 PlayerObj golemLogic = golemObj.GetComponent<PlayerObj>();
                 golemLogic.type = "StoneGolem";
                 golemLogic.life = life;
+                golemLogic.maxLife = life;
                 golemLogic.power = dmg * power;
                 Vector2 pos = new Vector2(transform.position.x+1f,transform.position.y);
                 golemObj.transform.position = pos;
                 golemLogic.maxLevel = maxLevel;
+                SpriteRenderer spriteRenderer = golemObj.GetComponent<SpriteRenderer>();
+                spriteRenderer.color = new Color(1,1,0);
+                golemLogic.elementalType = "Stone";
             } else {
                 PlayerObj golem = golemObj.GetComponent<PlayerObj>();
                 golem.power = dmg * power;
@@ -2484,10 +2561,14 @@ public class PlayerMove : MonoBehaviour
                 PlayerObj golemLogic = golemObj.GetComponent<PlayerObj>();
                 golemLogic.type = "WaterGolem";
                 golemLogic.life = life;
+                golemLogic.maxLife = life;
                 golemLogic.power = dmg * power;
                 Vector2 pos = new Vector2(transform.position.x+1f,transform.position.y);
                 golemObj.transform.position = pos;
                 golemLogic.maxLevel = maxLevel;
+                SpriteRenderer spriteRenderer = golemObj.GetComponent<SpriteRenderer>();
+                spriteRenderer.color = new Color(0.2f,0.5f,1);
+                golemLogic.elementalType = "Water";
              } else {
                 PlayerObj golem = golemObj.GetComponent<PlayerObj>();
                 golem.power = dmg * power;
@@ -2500,10 +2581,15 @@ public class PlayerMove : MonoBehaviour
                 PlayerObj golemLogic = golemObj.GetComponent<PlayerObj>();
                 golemLogic.type = "LightningGolem";
                 golemLogic.life = life;
+                golemLogic.maxLife = life;
                 golemLogic.power = (dmg * power)*0.8f;
                 Vector2 pos = new Vector2(transform.position.x+1f,transform.position.y);
                 golemObj.transform.position = pos;
                 golemLogic.maxLevel = maxLevel;
+                PlayerObj golem = golemObj.GetComponent<PlayerObj>();
+                SpriteRenderer spriteRenderer = golemObj.GetComponent<SpriteRenderer>();
+                spriteRenderer.color = new Color(1,0,1);
+                golemLogic.elementalType = "Lightning";
             } else {
                 PlayerObj golem = golemObj.GetComponent<PlayerObj>();
                 golem.power = dmg * power;
@@ -2644,25 +2730,26 @@ public class PlayerMove : MonoBehaviour
     }
     public void EnemyOff()
     {
-        //화면의 적군을 지우기 아직 사용x
-        boomEffect.SetActive(true);
+        //모든 적군을 지우기
         GameObject[] enemyA = objectManager.GetPool("EnemyA");
         GameObject[] enemyB = objectManager.GetPool("EnemyB");
         GameObject[] enemyC = objectManager.GetPool("EnemyC");
         for(int index=0; index<enemyA.Length;index++){
             if(objectManager.GetPool("EnemyA")[index].activeSelf){
-                objectManager.GetPool("EnemyA")[index].SetActive(false);
+                EnemyMove enemyALogic = objectManager.GetPool("EnemyA")[index].GetComponent<EnemyMove>();
+                enemyALogic.EnemyDead();
             }
         }
         for(int index=0; index<enemyB.Length;index++){
             if(objectManager.GetPool("EnemyB")[index].activeSelf){
-                objectManager.GetPool("EnemyB")[index].SetActive(false);
+                EnemyMove enemyBLogic = objectManager.GetPool("EnemyB")[index].GetComponent<EnemyMove>();
+                enemyBLogic.EnemyDead();
             }
         }
         for(int index=0; index<enemyC.Length;index++){
             if(objectManager.GetPool("EnemyC")[index].activeSelf){
-                objectManager.GetPool("EnemyC")[index].SetActive(false);
-            }
+                EnemyMove enemyCLogic = objectManager.GetPool("EnemyC")[index].GetComponent<EnemyMove>();
+                enemyCLogic.EnemyDead();            }
         }
         // 모든 적군의 총알을 없앤다
         GameObject[] bulletA = objectManager.GetPool("BulletEnemyA");
@@ -2672,4 +2759,14 @@ public class PlayerMove : MonoBehaviour
             bulletB[index].SetActive(false);
         }
     }
+    private IEnumerator InvokeRealTimeHelper (string fuctionName, float delay)
+    {
+        float timeElapsed = 0f;
+        while (timeElapsed < delay){
+            timeElapsed += Time.deltaTime;
+            yield return null;
+        }
+        SendMessage(fuctionName);
+    }
+
 }

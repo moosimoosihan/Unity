@@ -4,6 +4,7 @@ using UnityEngine;
 
 public class PlayerObj : MonoBehaviour
 {
+    float playerObjDamagedTime;
     public RuntimeAnimatorController[] animCharacter;
     public Sprite[] sprites;
     public string type;
@@ -11,25 +12,25 @@ public class PlayerObj : MonoBehaviour
     public float life;
     public GameManager gameManager;
     SpriteRenderer spriteRenderer;
-    bool playerObjDead;
+    public bool playerObjDead;
     public bool maxLevel;
     Rigidbody2D rigid;
     Animator anim;
     public PlayerMove playerMove;
     float AttackTime; // 스컬 공격 쿨타임
     public float speed; // 이동 속도
-    float maxLife; // 최대 체력
+    public float maxLife; // 최대 체력
     float healingCount; // 회복 카운트
     public Queue<Vector3> parentPos;
     public Vector3 followPos;
     int followDelay = 12;
     public bool isMaxOn;
+    public string elementalType;
     void Start()
     {
+        // playerObjDead = false;
+        
         switch(type){
-            case "Turret":
-                life = 100f;
-            break;
             case "Skull":
                 anim.runtimeAnimatorController = animCharacter[0];
                 spriteRenderer.sprite = sprites[0];
@@ -38,29 +39,21 @@ public class PlayerObj : MonoBehaviour
                 anim.runtimeAnimatorController = animCharacter[1];
                 spriteRenderer.sprite = sprites[1];
             break;
-            case "IceGolem":
-                spriteRenderer.color = new Color(1,1,1);
-            break;
-            case "FireGolem":
-                spriteRenderer.color = new Color(0.7f,0,0);
-            break;
-            case "StoneGolem":
-                spriteRenderer.color = new Color(1,1,0);
-            break;
-            case "WaterGolem":
-                spriteRenderer.color = new Color(0.2f,0.5f,1);
-            break;
-            case "LightningGolem":
-                spriteRenderer.color = new Color(1,0,1);
-            break;
         }
         maxLife = life;
     }
     void OnEnable()
     {
         playerObjDead = false;
-        if(type == "Lake"){
-            Invoke("ActiveOff",15f);
+
+        switch(type){
+            case "Lake":
+                Invoke("ActiveOff",15f);
+            break;
+            case "Turret":
+                life = 100f;
+                elementalType = "None";
+            break;
         }
     }
     void Awake()
@@ -71,6 +64,149 @@ public class PlayerObj : MonoBehaviour
         gameManager = GameManager.instance;
         playerMove = GameManager.instance.playerMove;
         parentPos = new Queue<Vector3>();
+    }
+
+    void FixedUpdate()
+    {
+        if(type=="Bear" && gameObject.activeSelf){ // 곰 움직임 구현
+            if(Vector3.Distance(transform.position, playerMove.transform.position)>3f){ // 플레이어와 거리가 멀다면 플레이어에게 다가가라
+                Vector2 direction1 = new Vector2(transform.position.x - GameManager.instance.playerMove.transform.position.x,transform.position.y - GameManager.instance.playerMove.transform.position.y);
+                Vector2 nextVec1 = new Vector2((direction1.x * Time.fixedDeltaTime)*1.5f,(+direction1.y * Time.fixedDeltaTime)*1.5f);
+                rigid.MovePosition(rigid.position - nextVec1);
+                rigid.velocity = Vector2.zero;
+                if(playerMove.transform.position.x > transform.position.x) { // 플레이어에게 갈때
+                    spriteRenderer.flipX = false;
+                } else {
+                    spriteRenderer.flipX = true;
+                }
+            } else {
+                if(Vector3.Distance(transform.position, playerMove.targetImage.transform.position)<=0.6f){// 골렘과 적군 사이가 가깝다면 공격모션
+                    anim.SetFloat("Speed",0);
+                } else {
+                    if(playerMove.targetImage.transform.position.x > transform.position.x) { // 적군 위치에 따른 적군 좌 우 이미지 반전
+                        spriteRenderer.flipX = false;
+                    } else {
+                        spriteRenderer.flipX = true;
+                    }
+                    anim.SetFloat("Speed",1);
+                    Vector2 direction = new Vector2(transform.position.x - playerMove.targetImage.transform.position.x,transform.position.y - playerMove.targetImage.transform.position.y);
+                    Vector2 nextVec = new Vector2(direction.x * Time.fixedDeltaTime * speed,+direction.y * Time.fixedDeltaTime * speed);
+                    rigid.MovePosition(rigid.position - nextVec);
+                    rigid.velocity = Vector2.zero;
+                }
+            }
+        } else if(type=="Skull" && gameObject.activeSelf){ // 스컬 움직임 구현
+            if(Vector3.Distance(transform.position, playerMove.transform.position)>3f){ // 플레이어와 거리가 멀다면 플레이어에게 다가가라
+                anim.SetBool("IsAttack",false);
+                if(playerMove.transform.position.x < transform.position.x) { // 플레이어에게 갈때
+                    spriteRenderer.flipX = false;
+                } else {
+                    spriteRenderer.flipX = true;
+                }
+                Vector2 direction1 = new Vector2(transform.position.x - GameManager.instance.playerMove.transform.position.x,transform.position.y - GameManager.instance.playerMove.transform.position.y);
+                Vector2 nextVec1 = new Vector2((direction1.x * Time.fixedDeltaTime)*1.5f,(+direction1.y * Time.fixedDeltaTime)*1.5f);
+                rigid.MovePosition(rigid.position - nextVec1);
+                rigid.velocity = Vector2.zero;
+            } else {
+                //적군 위치에 따른 적군 좌 우 이미지 반전
+                if(playerMove.targetImage.transform.position.x < transform.position.x) {
+                    spriteRenderer.flipX = false;
+                } else {
+                    spriteRenderer.flipX = true;
+                }
+                if(Vector3.Distance(transform.position, playerMove.targetImage.transform.position)<=0.6f){// 스컬과 적군 사이가 가깝다면 공격모션
+                    if(AttackTime<=0){
+                        Fire(maxLevel);
+                        if(maxLevel){
+                            AttackTime = 0.5f;
+                        } else {
+                            AttackTime = 1f;
+                        }
+                    } else {
+                        AttackTime -= Time.fixedDeltaTime;
+                    }
+                } else {
+                    anim.SetBool("IsAttack",false);
+                    Vector2 direction = new Vector2(transform.position.x - GameManager.instance.playerMove.targetImage.transform.position.x,transform.position.y - GameManager.instance.playerMove.targetImage.transform.position.y);
+                    Vector2 nextVec = new Vector2((direction.x * Time.fixedDeltaTime) * 1.5f,(+direction.y * Time.fixedDeltaTime) * 1.5f);
+                    rigid.MovePosition(rigid.position - nextVec);
+                    rigid.velocity = Vector2.zero;
+                }
+            }
+        } else if(type=="BowSkull" && gameObject.activeSelf){ // 활 스컬 움직임 구현
+            if(Vector3.Distance(transform.position, playerMove.transform.position)>3f){ // 플레이어와 거리가 멀다면 플레이어에게 다가가라
+                anim.SetBool("IsAttack",false);
+                if(playerMove.transform.position.x < transform.position.x) { // 플레이어에게 갈때
+                    spriteRenderer.flipX = false;
+                } else {
+                    spriteRenderer.flipX = true;
+                }
+                Vector2 direction1 = new Vector2(transform.position.x - GameManager.instance.playerMove.transform.position.x,transform.position.y - GameManager.instance.playerMove.transform.position.y);
+                Vector2 nextVec1 = new Vector2((direction1.x * Time.fixedDeltaTime)*1.5f,(+direction1.y * Time.fixedDeltaTime)*1.5f);
+                rigid.MovePosition(rigid.position - nextVec1);
+                rigid.velocity = Vector2.zero;
+            } else {
+                if(Vector3.Distance(transform.position, playerMove.targetImage.transform.position)<=2f){// 스컬과 적군 사이가 가깝다면 멀리 떨어져라
+                    anim.SetBool("IsAttack",false);
+                    if(playerMove.targetImage.transform.position.x > transform.position.x) { // 도망가기에 반대로
+                        spriteRenderer.flipX = false;
+                    } else {
+                        spriteRenderer.flipX = true;
+                    }
+                    Vector2 direction = new Vector2(transform.position.x - GameManager.instance.playerMove.targetImage.transform.position.x,transform.position.y - GameManager.instance.playerMove.targetImage.transform.position.y);
+                    Vector2 nextVec = new Vector2((direction.x * Time.fixedDeltaTime)*1.5f,(+direction.y * Time.fixedDeltaTime)*1.5f);
+                    rigid.MovePosition(rigid.position + nextVec);
+                    rigid.velocity = Vector2.zero;
+                } else {
+                    //적군 위치에 따른 적군 좌 우 이미지 반전
+                    if(playerMove.targetImage.transform.position.x < transform.position.x) {
+                        spriteRenderer.flipX = false;
+                    } else {
+                        spriteRenderer.flipX = true;
+                    }
+                    if(AttackTime<=0){
+                        Fire(maxLevel);
+                        if(maxLevel){
+                            AttackTime = 0.5f;
+                        } else {
+                            AttackTime = 1f;
+                        }
+                    } else {
+                        AttackTime -= Time.fixedDeltaTime;
+                    }
+                }
+            }
+        } else if(type=="IceGolem" || type=="FireGolem" || type=="StoneGolem" || type=="WaterGolem" ||type=="LightningGolem"){ // 골렘의 경우
+            if(Vector3.Distance(transform.position, playerMove.transform.position)>3f){ // 플레이어와 거리가 멀다면 플레이어에게 다가가라
+                anim.SetFloat("Speed",1);
+                if(playerMove.transform.position.x > transform.position.x) { // 플레이어에게 갈때
+                    spriteRenderer.flipX = false;
+                } else {
+                    spriteRenderer.flipX = true;
+                }
+                Vector2 direction1 = new Vector2(transform.position.x - GameManager.instance.playerMove.transform.position.x,transform.position.y - GameManager.instance.playerMove.transform.position.y);
+                Vector2 nextVec1 = new Vector2((direction1.x * Time.fixedDeltaTime)*1.5f,(+direction1.y * Time.fixedDeltaTime)*1.5f);
+                rigid.MovePosition(rigid.position - nextVec1);
+                rigid.velocity = Vector2.zero;
+            } else {
+                //적군 위치에 따른 적군 좌 우 이미지 반전
+                if(playerMove.targetImage.transform.position.x > transform.position.x) {
+                    spriteRenderer.flipX = false;
+                } else {
+                    spriteRenderer.flipX = true;
+                }
+                if(Vector3.Distance(transform.position, playerMove.targetImage.transform.position)<=0.6f){// 골렘과 적군 사이가 가깝다면 공격모션
+                    anim.SetFloat("Speed",0);
+                } else {
+                    anim.SetFloat("Speed",1);
+                    Vector2 direction = new Vector2(transform.position.x - GameManager.instance.playerMove.targetImage.transform.position.x,transform.position.y - GameManager.instance.playerMove.targetImage.transform.position.y);
+                    Vector2 nextVec = new Vector2((direction.x * Time.fixedDeltaTime) * 1.5f,(+direction.y * Time.fixedDeltaTime) * 1.5f);
+                    rigid.MovePosition(rigid.position - nextVec);
+                    rigid.velocity = Vector2.zero;
+                }
+            }
+        }
+
     }
 
     void Update()
@@ -120,168 +256,6 @@ public class PlayerObj : MonoBehaviour
                 Effect dieEffectLogic = dieEffect.GetComponent<Effect>();
                 dieEffect.transform.position = transform.position;
                 dieEffectLogic.power = power;
-            }
-        }
-        if(type=="Bear" && gameObject.activeSelf){ // 곰 움직임 구현
-            if(Vector3.Distance(transform.position, playerMove.transform.position)>3f){ // 플레이어와 거리가 멀다면 플레이어에게 다가가라
-                Vector2 direction1 = new Vector2(transform.position.x - GameManager.instance.playerMove.transform.position.x,transform.position.y - GameManager.instance.playerMove.transform.position.y);
-                Vector2 moveVec1;
-                //이동 함수
-                if(direction1.x >= 1){
-                    anim.SetInteger("X", -1);
-                    anim.SetInteger("Y", 0);
-                    moveVec1 = new Vector2(1,0);
-                } else if(direction1.x <= -1){
-                    anim.SetInteger("X", 1);
-                    anim.SetInteger("Y", 0);
-                    moveVec1 = new Vector2(-1,0);
-                } else if(direction1.y >= 1){
-                    anim.SetInteger("Y", -1);
-                    anim.SetInteger("X", 0);
-                    moveVec1 = new Vector2(0,1);
-                } else if(direction1.y <= -1){
-                    anim.SetInteger("Y", 1);
-                    anim.SetInteger("X", 0);
-                    moveVec1 = new Vector2(0,-1);
-                } else {
-                    moveVec1 = new Vector2(0,0);
-                }
-                Vector2 nextVec1 = new Vector2((moveVec1.x * Time.deltaTime)*1.5f,(+moveVec1.y * Time.deltaTime)*1.5f);
-                rigid.MovePosition(rigid.position - nextVec1);
-            } else {
-                if(Vector3.Distance(transform.position, playerMove.targetImage.transform.position)<=1f){// 곰과 적군 사이가 가깝다면 공격모션
-                    anim.SetInteger("X",0);
-                    anim.SetInteger("Y",0);
-                } else {
-                    Vector2 direction = new Vector2(transform.position.x - playerMove.targetImage.transform.position.x,transform.position.y - playerMove.targetImage.transform.position.y);
-                    Vector2 moveVec;
-                    //이동 함수
-                    if(direction.x >= 1){
-                        anim.SetInteger("X", -1);
-                        anim.SetInteger("Y", 0);
-                        moveVec = new Vector2(1,0);
-                    } else if(direction.x <= -1){
-                        anim.SetInteger("X", 1);
-                        anim.SetInteger("Y", 0);
-                        moveVec = new Vector2(-1,0);
-                    } else if(direction.y >= 1){
-                        anim.SetInteger("Y", -1);
-                        anim.SetInteger("X", 0);
-                        moveVec = new Vector2(0,1);
-                    } else if(direction.y <= -1){
-                        anim.SetInteger("Y", 1);
-                        anim.SetInteger("X", 0);
-                        moveVec = new Vector2(0,-1);
-                    } else {
-                        moveVec = new Vector2(0,0);
-                    }
-                    Vector2 nextVec = new Vector2(moveVec.x * Time.deltaTime * speed,+moveVec.y * Time.deltaTime * speed);
-                    rigid.MovePosition(rigid.position - nextVec);
-                }
-            }
-        } else if(type=="Skull" && gameObject.activeSelf){ // 스컬 움직임 구현
-            if(Vector3.Distance(transform.position, playerMove.transform.position)>3f){ // 플레이어와 거리가 멀다면 플레이어에게 다가가라
-                anim.SetBool("IsAttack",false);
-                if(playerMove.transform.position.x < transform.position.x) { // 플레이어에게 갈때
-                    spriteRenderer.flipX = false;
-                } else {
-                    spriteRenderer.flipX = true;
-                }
-                Vector2 direction1 = new Vector2(transform.position.x - GameManager.instance.playerMove.transform.position.x,transform.position.y - GameManager.instance.playerMove.transform.position.y);
-                Vector2 nextVec1 = new Vector2((direction1.x * Time.deltaTime)*1.5f,(+direction1.y * Time.deltaTime)*1.5f);
-                rigid.MovePosition(rigid.position - nextVec1);
-            } else {
-                //적군 위치에 따른 적군 좌 우 이미지 반전
-                if(playerMove.targetImage.transform.position.x < transform.position.x) {
-                    spriteRenderer.flipX = false;
-                } else {
-                    spriteRenderer.flipX = true;
-                }
-                if(Vector3.Distance(transform.position, playerMove.targetImage.transform.position)<=0.6f){// 스컬과 적군 사이가 가깝다면 공격모션
-                    if(AttackTime<=0){
-                        Fire(maxLevel);
-                        if(maxLevel){
-                            AttackTime = 0.5f;
-                        } else {
-                            AttackTime = 1f;
-                        }
-                    } else {
-                        AttackTime -= Time.deltaTime;
-                    }
-                } else {
-                    anim.SetBool("IsAttack",false);
-                    Vector2 direction = new Vector2(transform.position.x - GameManager.instance.playerMove.targetImage.transform.position.x,transform.position.y - GameManager.instance.playerMove.targetImage.transform.position.y);
-                    Vector2 nextVec = new Vector2((direction.x * Time.deltaTime) * 1.5f,(+direction.y * Time.deltaTime) * 1.5f);
-                    rigid.MovePosition(rigid.position - nextVec);
-                }
-            }
-        } else if(type=="BowSkull" && gameObject.activeSelf){ // 활 스컬 움직임 구현
-            if(Vector3.Distance(transform.position, playerMove.transform.position)>3f){ // 플레이어와 거리가 멀다면 플레이어에게 다가가라
-                anim.SetBool("IsAttack",false);
-                if(playerMove.transform.position.x < transform.position.x) { // 플레이어에게 갈때
-                    spriteRenderer.flipX = false;
-                } else {
-                    spriteRenderer.flipX = true;
-                }
-                Vector2 direction1 = new Vector2(transform.position.x - GameManager.instance.playerMove.transform.position.x,transform.position.y - GameManager.instance.playerMove.transform.position.y);
-                Vector2 nextVec1 = new Vector2((direction1.x * Time.deltaTime)*1.5f,(+direction1.y * Time.deltaTime)*1.5f);
-                rigid.MovePosition(rigid.position - nextVec1);
-            } else {
-                if(Vector3.Distance(transform.position, playerMove.targetImage.transform.position)<=2f){// 스컬과 적군 사이가 가깝다면 멀리 떨어져라
-                    anim.SetBool("IsAttack",false);
-                    if(playerMove.targetImage.transform.position.x > transform.position.x) { // 도망가기에 반대로
-                        spriteRenderer.flipX = false;
-                    } else {
-                        spriteRenderer.flipX = true;
-                    }
-                    Vector2 direction = new Vector2(transform.position.x - GameManager.instance.playerMove.targetImage.transform.position.x,transform.position.y - GameManager.instance.playerMove.targetImage.transform.position.y);
-                    Vector2 nextVec = new Vector2((direction.x * Time.deltaTime)*1.5f,(+direction.y * Time.deltaTime)*1.5f);
-                    rigid.MovePosition(rigid.position + nextVec);
-                } else {
-                    //적군 위치에 따른 적군 좌 우 이미지 반전
-                    if(playerMove.targetImage.transform.position.x < transform.position.x) {
-                        spriteRenderer.flipX = false;
-                    } else {
-                        spriteRenderer.flipX = true;
-                    }
-                    if(AttackTime<=0){
-                        Fire(maxLevel);
-                        if(maxLevel){
-                            AttackTime = 0.5f;
-                        } else {
-                            AttackTime = 1f;
-                        }
-                    } else {
-                        AttackTime -= Time.deltaTime;
-                    }
-                }
-            }
-        } else if(type=="IceGolem" || type=="FireGolem" || type=="StoneGolem" || type=="WaterGolem" ||type=="LightningGolem"){ // 골렘의 경우
-            if(Vector3.Distance(transform.position, playerMove.transform.position)>3f){ // 플레이어와 거리가 멀다면 플레이어에게 다가가라
-                anim.SetFloat("Speed",1);
-                if(playerMove.transform.position.x > transform.position.x) { // 플레이어에게 갈때
-                    spriteRenderer.flipX = false;
-                } else {
-                    spriteRenderer.flipX = true;
-                }
-                Vector2 direction1 = new Vector2(transform.position.x - GameManager.instance.playerMove.transform.position.x,transform.position.y - GameManager.instance.playerMove.transform.position.y);
-                Vector2 nextVec1 = new Vector2((direction1.x * Time.deltaTime)*1.5f,(+direction1.y * Time.deltaTime)*1.5f);
-                rigid.MovePosition(rigid.position - nextVec1);
-            } else {
-                //적군 위치에 따른 적군 좌 우 이미지 반전
-                if(playerMove.targetImage.transform.position.x > transform.position.x) {
-                    spriteRenderer.flipX = false;
-                } else {
-                    spriteRenderer.flipX = true;
-                }
-                if(Vector3.Distance(transform.position, playerMove.targetImage.transform.position)<=0.6f){// 골렘과 적군 사이가 가깝다면 공격모션
-                    anim.SetFloat("Speed",0);
-                } else {
-                    anim.SetFloat("Speed",1);
-                    Vector2 direction = new Vector2(transform.position.x - GameManager.instance.playerMove.targetImage.transform.position.x,transform.position.y - GameManager.instance.playerMove.targetImage.transform.position.y);
-                    Vector2 nextVec = new Vector2((direction.x * Time.deltaTime) * 1.5f,(+direction.y * Time.deltaTime) * 1.5f);
-                    rigid.MovePosition(rigid.position - nextVec);
-                }
             }
         }
     }
@@ -467,19 +441,43 @@ public class PlayerObj : MonoBehaviour
         }
     }
     private void OnTriggerEnter2D(Collider2D other) {
+        if(playerObjDead)
+            return;
+
+        if(type == "Bird")
+            return;
+
+        if(type == "Lake")
+            return;
+
         if(other.gameObject.tag == "BorderBullet"){
             gameObject.SetActive(false);
+        } else if(other.gameObject.tag == "EnemyBullet"){
+            PlayerObjDamaged(other.gameObject, "Bullet");
+        } else if(type=="Effect"){
+            PlayerObjDamaged(other.gameObject,"Effect");
         }
     }
     void OnCollisionStay2D(Collision2D other) {
-        if(playerObjDead) return;
-        if(type == "Bird") return;
-        if(type == "Lake") return;
+        if(playerObjDead)
+            return;
+
+        if(type == "Bird")
+            return;
+
+        if(type == "Lake")
+            return;
         
         //적군과 맞닿아 있다면 데미지가 들어가라
         if(other.gameObject.tag == "Enemy"){
             EnemyMove enemy = other.gameObject.GetComponent<EnemyMove>();
-            PlayerObjDamaged(enemy.power);
+            if(playerObjDamagedTime>=1){
+                PlayerObjDamaged(other.gameObject, "Enemy");
+                playerObjDamagedTime = 0;
+            } else {
+                spriteRenderer.color = new Color(1,0,0);
+                playerObjDamagedTime += Time.deltaTime;
+            }
             if(type == "IceGolem"){
                 enemy.isIce = true;
                 enemy.iceDamage = power;
@@ -500,54 +498,78 @@ public class PlayerObj : MonoBehaviour
         }
     }
     private void OnTriggerStay2D(Collider2D other) {
-        if(playerObjDead) return;
-        if(type == "Bird") return;
-        if(type == "Lake") return;
+        if(!gameObject.activeSelf)
+            return;
+
+        if(type == "Bird")
+            return;
+
+        if(type == "Lake")
+            return;
         
         // 호수에 닿아 있다면 회복
         if(other.gameObject.tag == "PlayerObj"){
             PlayerObj lakeLogic = other.gameObject.GetComponent<PlayerObj>();
             if(lakeLogic.type == "Lake"){
-                healingCount += Time.deltaTime;
                 if(healingCount>=5){
-                    Healing(power*0.05f);
+                    Healing(lakeLogic.power*0.05f);
                     healingCount = 0;
+                } else {
+                    healingCount += Time.deltaTime;
                 }
             }
         }
     }
     //플레이어 오브젝트 데미지
-    void PlayerObjDamaged(float dmg)
+    void PlayerObjDamaged(GameObject target, string type)
     {
-        spriteRenderer.color = new Color(1,0,0);
-        //해당 적군을 찾아서 해당 적군의 데미지가 초당 들어가라
-        life -= dmg * Time.deltaTime;
+        if(type == "Enemy"){
+            EnemyMove enemyLogic = target.GetComponent<EnemyMove>();
+            float dmg = enemyLogic.CriticalHit(enemyLogic.power);
+            gameManager.DamageText(transform.position, dmg, enemyLogic.elementalType, enemyLogic.isCritical);
+            life -= dmg;
+            
+            // 적군 공격 타입 별 플레이어 오브젝트 데미지 입는 함수 넣어야 함!
+            if(enemyLogic.elementalType =="Fire"){
+
+            } else if(enemyLogic.elementalType =="Ice") {
+
+            } else if(enemyLogic.elementalType =="Lightning"){
+
+            } else if(enemyLogic.elementalType =="Water"){
+
+            }
+        } else if(type == "Bullet"){
+            Bullet bullet = target.gameObject.GetComponent<Bullet>();
+            gameManager.DamageText(transform.position, bullet.power, bullet.elementalType, bullet.enemyCritical);
+            life -= bullet.power;
+            PlayerObjRed();
+            target.gameObject.SetActive(false);
+        } else if(type=="Effect"){
+            Effect effect = target.gameObject.GetComponent<Effect>();
+            gameManager.DamageText(transform.position, effect.power, effect.elementalType, false);
+            life -= effect.power;
+            PlayerObjRed();
+        }
     }
     void OnCollisionExit2D(Collision2D other) {
+        if(playerObjDead)
+            return;
+
+        if(type == "Bird")
+            return;
+
+        if(type == "Lake")
+            return;
+
         //적군과 떨어지면 색상을 복구해라
         if(other.gameObject.tag == "Enemy"){
-            switch(type){
-                case "FireGolem":
-                    spriteRenderer.color = new Color(0.7f,0,0);
-                break;
-                case "StoneGolem":
-                    spriteRenderer.color = new Color(1,1,0);
-                break;
-                case "WaterGolem":
-                    spriteRenderer.color = new Color(0.2f,0.5f,1);
-                break;
-                case "LightningGolem":
-                    spriteRenderer.color = new Color(1,0,1);
-                break;
-                default:
-                    spriteRenderer.color = new Color(1,1,1);
-                break;
-            }
+            ReturnSprite();
         }
     }
     void OnDisable()
     {
-        if(type=="IceGolem" || type=="FireGolem" || type=="StoneGolem" || type=="WaterGolem" ||type=="LightningGolem"){ // 골렘의 경우
+        if(type=="IceGolem" || type=="FireGolem" || type=="StoneGolem" || type=="WaterGolem" || type=="LightningGolem"){ // 골렘의 경우
             isMaxOn = false;
             playerMove.golemCount = 3;
             playerMove.isGolem = false;
@@ -557,10 +579,13 @@ public class PlayerObj : MonoBehaviour
             playerMove.isLake = false;
         } else if(type == "Bear"){
             playerMove.brearCount = 3;
+        } else if(type == "Skull" || type == "BowSkull" ){
+            anim.runtimeAnimatorController = null;
+            spriteRenderer.sprite = null;
         }
     }
     void Healing(float healValue)
-    {
+    {        
         if(life+healValue>maxLife){
             gameManager.DamageText(transform.position, maxLife - life, "Healing", false);
             life = maxLife;
@@ -575,5 +600,33 @@ public class PlayerObj : MonoBehaviour
     void ActiveOff()
     {
         gameObject.SetActive(false);
+    }
+    void PlayerObjRed()
+    {
+        spriteRenderer.color = new Color(1,0,0);
+        Invoke("ReturnSprite",0.2f);
+    }
+    void ReturnSprite()
+    {
+        switch(type){
+            case "FireGolem":
+                spriteRenderer.color = new Color(0.7f,0,0);
+            break;
+            case "StoneGolem":
+                spriteRenderer.color = new Color(1,1,0);
+            break;
+            case "WaterGolem":
+                spriteRenderer.color = new Color(0.2f,0.5f,1);
+            break;
+            case "LightningGolem":
+                spriteRenderer.color = new Color(1,0,1);
+            break;
+            case "IceGolem":
+                spriteRenderer.color = new Color(1,1,1);
+            break;
+            default:
+                spriteRenderer.color = new Color(1,1,1);
+            break;
+        }
     }
 }

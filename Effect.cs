@@ -7,6 +7,7 @@ public class Effect : MonoBehaviour
     public float power;
     public string effectName;
     private float destroyTime = 0.5f;
+    public string elementalType;
     Animator anim;
     void Awake()
     {

@@ -22,7 +22,6 @@ public class Background : MonoBehaviour
     float halfSightY = 10;
     //타일 전체 크기(순서대로 왼쪽-위 좌표, 오른쪽-아래 좌표)
     Vector2[] border;
-    int count;
 
     void Start()
     {

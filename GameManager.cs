@@ -4,13 +4,19 @@ using UnityEngine;
 using UnityEngine.UI;
 using System.IO;
 using UnityEngine.SceneManagement;
-using GoogleMobileAds.Api;
+//using GoogleMobileAds.Api;
 
 
 public class GameManager : MonoBehaviour
 {
+    public bool isBoss; // 보스랑 싸우는 중인가?
+
+    //보스 클리어 체크
+    public bool boss1Clear;
+    public bool boss2Clear;
+
     //광고 함수
-    private InterstitialAd interstitial;
+    //private InterstitialAd interstitial;
 
     //언어 함수
     public string language;
@@ -47,7 +53,9 @@ public class GameManager : MonoBehaviour
     public int spawnIndex;
     public bool spawnEnd;
     public int stage;
-    bool Boss1;
+    public bool bossClear;
+    public bool stageEnd;
+    public int wave;
 
     //UI 함수
     public Image expBar;
@@ -73,7 +81,8 @@ public class GameManager : MonoBehaviour
     public Text[] HomeButtonText;
     public Text continueButtonText;
     public Text explaneText;
-    public Canvas myCanvas;
+    public Text waveText;
+
 
     //레벨업 셀렉 UI
     public GameObject selectPanel;
@@ -105,8 +114,6 @@ public class GameManager : MonoBehaviour
     bool isLevelUp = false;
 
     //상자 함수
-    bool isBoxOpen;
-    int boxOpenCount;
     float boxCreatTime;
 
 
@@ -138,7 +145,7 @@ public class GameManager : MonoBehaviour
             if(character == "Wizard"){
                 weaponText = new string[]{"IceSpear","WindForce","FireBall","ThunderV","Water","Stone","Delay","Speed","Life","Power","Magnet","Critical"};
                 weaponExText = new string[,] {{"Throws a powerful Icespear.\nType Ice","DamageUp\nScaleUp","DamageUp\nScaleUp","DamageUp\nScaleUp","DamageUp\nScaleUp","Throws an ice bomb"},
-                                            {"Summons a wind that pushes enemies away every 5 seconds.\nType Wind","DamageUp\nScaleUp\nTimeUp","DamageUp\nScaleUp\nTimeUp","DamageUp\nScaleUp\nTimeUp","DamageUp\nScaleUp\nTimeUp","Summons a hurricane that circles around you."},
+                                            {"Summons a wind that pushes enemies away.\nType Wind","DamageUp\nScaleUp\nTimeUp","DamageUp\nScaleUp\nTimeUp","DamageUp\nScaleUp\nTimeUp","DamageUp\nScaleUp\nTimeUp","Summons a hurricane that circles around you."},
                                             {"Fire fires.\nType Fire","DamageUp\nScaleUp","DamageUp\nScaleUp","DamageUp\nScaleUp","DamageUp\nScaleUp","Fire spreads in all directions."},
                                             {"Thunder crashes from the sky.\n2 Thunder\nType Lightning","3 Thunder","4 Thunder","5 Thunder","6 Thunder","A strong lightning strikes."},
                                             {"Water wraps around the wizard.\nType Water","ScaleUp","ScaleUp","ScaleUp","ScaleUp","A tsunami sweeps through the area.\n3 Seconds"},
@@ -150,7 +157,7 @@ public class GameManager : MonoBehaviour
                                             {"Power+10%","Power+20%","Power+30%","Power+40%","Power+50%",""},
                                             {"Mag ScaleUp","Mag ScaleUp","Mag ScaleUp","Mag ScaleUp","Mag ScaleUp",""},
                                             {"Critical Damage155%\nCritical Chance5%","Critical Damage160%\nCritical Chance10%","Critical Damage165%\nCritical Chance15%","Critical Damage170%\nCritical Chance20%","Critical Damage175%\nCritical Chance25%",""}};
-                pauseExText = new string[,] {{"Haven't learned yet.","Damage 50\n100% size","Damage 100\n120% size","Damage 150\n130% size","Damage 200\n140% size","Damage 250\n150% size","Damage 500\n180% size\nIce is scattered in all directions."},
+                pauseExText = new string[,] {{"Haven't learned yet.","Damage 80\n100% size","Damage 120\n120% size","Damage 170\n130% size","Damage 220\n140% size","Damage 270\n150% size","Damage 500\n180% size\nIce is scattered in all directions."},
                                             {"Haven't learned yet.","Damage 30\n100% size\n1 seconds","Damage 60\n110% size\n1.2 seconds","Damage 90\n120% size\n1.6 seconds","Damage 120\n130% size\n1.7 seconds","Damage 160\n150% size\n2.5 seconds","Damage 200\n150% size\n2.5 seconds\nA typhoon whirls around."},
                                             {"Haven't learned yet.","Damage 50\n100% size","Damage 80\n120% size","Damage 120\n140% size","Damage 150\n160% size","Damage 190\n180% size","Damage 250\n200% size\nFire spreads in all directions."},
                                             {"Haven't learned yet.","Damage 40\n2 Thunder","Damage 80\n3 Thunder","Damage 120\n4 Thunder","Damage 160\n5 Thunder","Damage 200\n6 Thunder","Damage 300\n6 Thunder\nBig size"},
@@ -196,7 +203,7 @@ public class GameManager : MonoBehaviour
                 weaponExText = new string[,] {{"Deals damage to nearby enemies.\nDamage Up according to the number of enemies killed\nType physical","Damage Up","Damage Up","Damage Up","Damage Up","Instant death with 5% chance \nExcluding bosses and elite monsters"},
                                             {"Throws a spinning hammer.\nPhysical type","Up damage","Up damage","Up damage","Up damage","Throws hammers in both directions."},
                                             {"Wields a mace.\nPhysical type","Up damage\nUp speed","Up damage\nUp speed","Up damage\nUp speed","Up damage\nUp speed"," Mace size Up."},
-                                            {"Momentarily movement speed Up and pushes nearby enemies.\nPhysical type","Up damage","Up damage","Up damage","Up damage","Pushes enemies further away."},
+                                            {"Momentarily movement speed Up and pushes nearby enemies.\nPhysical type","Up damage","Up damage","Up damage","Up damage","Pushes enemies further away.\nbecome invincible for a while."},
                                             {"Emits light in the shape of a cross.\nType light","Damage up","Damage up","Damage up","Damage up","Cross turns."},
                                             {"A beam of light descends from the sky.\nType Light","Up damage\nUp speed","Up damage\nUp speed","Up damage\nUp speed","Up damage\nUp speed" ,"Damage is greatly Up."},
 
@@ -290,7 +297,7 @@ public class GameManager : MonoBehaviour
             if(character == "Wizard"){
                 weaponText = new string[]{"아이스 스피어","윈드포스","파이어볼","천둥 번개","물 오로라","돌","딜레이","스피드","체력","파워","획득 범위","크리티컬"};
                 weaponExText = new string[,] {{"데미지가 강한 고드름을 발사합니다.\n타입 얼음","데미지 증가\n크기 증가","데미지 증가\n크기 증가","데미지 증가\n크기 증가","데미지 증가\n크기 증가","얼음 폭탄을 던집니다.\n데미지 증가\n크기 증가"},
-                                            {"5초마다 마법사 주변 적군을 밀어내는 바람을 소환합니다.\n타입 바람","데미지 증가\n범위 증가\n지속시간 증가","데미지 증가\n범위 증가\n지속시간 증가","데미지 증가\n범위 증가\n지속시간 증가","데미지 증가\n범위 증가\n지속시간 증가","항상 태풍이 주변을 맴돕니다.\n데미지 증가"},
+                                            {"마법사 주변 적군을 밀어내는 바람을 소환합니다.\n타입 바람","데미지 증가\n범위 증가\n지속시간 증가","데미지 증가\n범위 증가\n지속시간 증가","데미지 증가\n범위 증가\n지속시간 증가","데미지 증가\n범위 증가\n지속시간 증가","항상 태풍이 주변을 맴돕니다.\n데미지 증가"},
                                             {"불이 발사됩니다.\n타입 불","데미지 증가\n크기 증가","데미지 증가\n크기 증가","데미지 증가\n크기 증가","데미지 증가\n크기 증가","불이 사방으로 퍼집니다.\n데미지 증가\n크기 증가"},
                                             {"하늘에서 2초마다 천둥번개가 내리칩니다.\n2개의 천둥\n타입 전기","3개의 천둥","4개의 천둥","5개의 천둥","6개의 천둥","강력한 천둥번개가 칩니다."},
                                             {"마법사 주변에 물 오로라가 생깁니다.\n타입 물","범위 증가","범위 증가","범위 증가","범위 증가","3초마다 쓰나미가 몰려옵니다."},
@@ -302,7 +309,7 @@ public class GameManager : MonoBehaviour
                                             {"10% 파워 증가","20%  파워 증가","30%  파워 증가","40%  파워 증가","50%  파워 증가",""},
                                             {"아이템 획득 범위 증가","아이템 획득 범위 증가","아이템 획득 범위 증가","아이템 획득 범위 증가","아이템 획득 범위 증가",""},
                                             {"155% 크리티컬 데미지\n5% 크리티컬 확률","160% 크리티컬 데미지\n10% 크리티컬 확률","165% 크리티컬 데미지\n15% 크리티컬 확률","170% 크리티컬 데미지\n20% 크리티컬 확률","175% 크리티컬 데미지\n25% 크리티컬 확률",""}};
-                pauseExText = new string[,] {{"아직 배우지 못했습니다.","데미지 50\n100% 사이즈","데미지 100\n120% 크기","데미지 150\n130% 크기","데미지 200\n140% 크기","데미지 250\n150% 크기","데미지 500\n180% 크기\n명중시 아이스 스피어가 사방으로 퍼집니다."},
+                pauseExText = new string[,] {{"아직 배우지 못했습니다.","데미지 80\n100% 사이즈","데미지 120\n120% 크기","데미지 170\n130% 크기","데미지 220\n140% 크기","데미지 270\n150% 크기","데미지 500\n180% 크기\n명중시 아이스 스피어가 사방으로 퍼집니다."},
                                             {"아직 배우지 못했습니다.","데미지 30\n100% 크기\n1 초의 지속시간","데미지 60\n110% 크기\n1.2 초의 지속시간","데미지 90\n120% 크기\n1.6 초의 지속시간","데미지 120\n130% 크기\n1.7 초의 지속시간","데미지 160\n150% 크기\n2.5 초의 지속시간","데미지 200\n150% 크기\n2.5 초의 지속시간\n태풍이 주변을 맴돕니다."},
                                             {"아직 배우지 못했습니다.","데미지 50\n100% 크기","데미지 80\n120% 크기","데미지 120\n140% 크기","데미지 150\n160% 크기","데미지 190\n180% 크기","데미지 250\n200% 크기\n불이 사방으로 퍼집니다."},
                                             {"아직 배우지 못했습니다.","데미지 40\n2 개의 천둥","데미지 80\n3 개의 천둥","데미지 120\n4 개의 천둥","데미지 160\n5 개의 천둥","데미지 200\n6 개의 천둥","데미지 300\n6 개의 천둥\n거대한 크기"},
@@ -348,7 +355,7 @@ public class GameManager : MonoBehaviour
                 weaponExText = new string[,] {{"주변에 적군에게 데미지를 줍니다.\n적군 처치 수에 따른 데미지 증가\n타입 물리","데미지 증가","데미지 증가","데미지 증가","데미지 증가","5% 확률로 즉사\n보스, 정예 몬스터 제외"},
                                             {"동그랗게 회전하는 망치를 던집니다.\n타입 물리","데미지 증가","데미지 증가","데미지 증가","데미지 증가","망치를 양쪽으로 던집니다."},
                                             {"철퇴를 휘두룹니다.\n타입 물리","데미지 증가\n속도 증가","데미지 증가\n속도 증가","데미지 증가\n속도 증가","데미지 증가\n속도 증가","철퇴의 크기가 증가합니다."},
-                                            {"잠시 이동속도가 증가하고 가까이 있는 적을 밀칩니다.\n타입 물리","데미지 증가","데미지 증가","데미지 증가","데미지 증가","적군을 더 멀리 밀어냅니다."},
+                                            {"잠시 이동속도가 증가하고 가까이 있는 적을 밀칩니다.\n타입 물리","데미지 증가","데미지 증가","데미지 증가","데미지 증가","적군을 더 멀리 밀어냅니다.\n잠시 무적상태가 됩니다."},
                                             {"십자가 모양으로 빛을 발산합니다.\n타입 빛","데미지 증가","데미지 증가","데미지 증가","데미지 증가","십자가가 돌아갑니다."},
                                             {"빛줄기가 하늘에서 내려옵니다.\n타입 빛","데미지 증가\n속도 증가","데미지 증가\n속도 증가","데미지 증가\n속도 증가","데미지 증가\n속도 증가","데미지가 많이 증가합니다."},
 
@@ -450,6 +457,7 @@ public class GameManager : MonoBehaviour
     }
     public void StageEnd()
     {
+        stageEnd= true;
         Invoke("StageClear",5f);
     }
     //적군소환을 위한 리스폰 데이터 읽기
@@ -461,7 +469,7 @@ public class GameManager : MonoBehaviour
         spawnEnd = false;
 
         //리스폰 파일 읽기(텍스트 파일이 아니면 null 처리) / System.IO 필요
-        TextAsset textFile = Resources.Load("Stage" + stage) as TextAsset;
+        TextAsset textFile = Resources.Load("Stage1" /*+ stage*/) as TextAsset;
         StringReader stringReader = new StringReader(textFile.text);
 
         while(stringReader != null)
@@ -511,7 +519,7 @@ public class GameManager : MonoBehaviour
                 enemyIndex = 1;
                 break;
             case "Event1":
-                enemyIndex = 5;
+                enemyIndex = 6;
                 eventPanel.SetActive(true);
                 camAnim.SetBool("IsOn",true);
                 if(language == "English"){
@@ -521,38 +529,41 @@ public class GameManager : MonoBehaviour
                 }
                 break;
             case "EventOut":
-                enemyIndex = 5;
+                enemyIndex = 6;
                 //적군이 더 이상 없을 경우 아웃(혹시 있다면 시간을 딜레이)
                 camAnim.SetBool("IsOn",false);
             break;
-            case "Event2":
-                enemyIndex = 5;
-                eventPanel.SetActive(true);
-                camAnim.SetBool("IsOn",true);
-                if(language == "English"){
-                    eventText.text = "warning!\nBoss is coming.";
-                } else if(language == "Korean"){
-                    eventText.text = "경고!\n보스가 등장합니다.";
-                }
-            break;
             case "SS":
                 spawnEnd = true;
-                enemyIndex = 5;
+                enemyIndex = 6;
+            break;
+            case "Wave":
+                wave++;
+                enemyIndex = 6;
+                eventPanel.SetActive(true);
+                if(language == "English"){
+                    eventText.text = "Wave " + wave;
+                } else if(language == "Korean"){
+                    eventText.text = "웨이브 " + wave;
+                }
             break;
         }
-        int enemyPoint = spawnList[spawnIndex].point;
-        GameObject enemy = objectManager.MakeObj(enemyObjs[enemyIndex]);
-        enemy.transform.position = spawnPoints[enemyPoint].position;
-        Rigidbody2D rigid = enemy.GetComponent<Rigidbody2D>();
-        EnemyMove enemyLogic = enemy.GetComponent<EnemyMove>();
-        enemyLogic.player = player;
-        enemyLogic.playerLogic = playerMove;
-        enemyLogic.objectManager = objectManager;
-        enemyLogic.gameManager = this;
-        enemyCount++;
+        if(enemyIndex!=6){
+            int enemyPoint = spawnList[spawnIndex].point;
+            GameObject enemy = objectManager.MakeObj(enemyObjs[enemyIndex]);
+            enemy.transform.position = spawnPoints[enemyPoint].position;
+            Rigidbody2D rigid = enemy.GetComponent<Rigidbody2D>();
+            EnemyMove enemyLogic = enemy.GetComponent<EnemyMove>();
+            Rigidbody2D playerRigid = playerMove.GetComponent<Rigidbody2D>();
+            enemyLogic.playerRigid = playerRigid;
+            enemyLogic.player = player;
+            enemyLogic.playerLogic = playerMove;
+            enemyLogic.objectManager = objectManager;
+            enemyLogic.gameManager = this;
+            enemyCount++;
+        }
         //리스폰 인덱스 증가
         spawnIndex++;
-
         //스폰이 끝난 경우
         if(spawnIndex == spawnList.Count){
             spawnEnd = true;
@@ -571,7 +582,7 @@ public class GameManager : MonoBehaviour
     void Update()
     {
         Timer();
-
+        BossCheck();
         if(language == "English"){
             levelText.text = "Level " + playerLevel.ToString();
         } else if(language == "Korean"){
@@ -580,6 +591,13 @@ public class GameManager : MonoBehaviour
         
         BoxCreat();
 
+        if(language == "English"){
+            waveText.text = "Wave " + wave;
+        } else if(language == "Korean"){
+            waveText.text = "웨이브 " + wave;
+        }
+
+        // exp 게이지
         expBar.fillAmount = playerMove.exp / levelUpExp;
 
         //체력에 게이지
@@ -597,8 +615,11 @@ public class GameManager : MonoBehaviour
         //플레이어를 따라가는 UI
         playerUI.transform.position = Camera.main.WorldToScreenPoint(player.transform.position + new Vector3(0, -0.4f, 0));
 
-        if(enemyCount == 0 && spawnEnd){
+        if(enemyCount <= 0 && spawnEnd && !bossClear){
             spawnEnd = false;
+        }
+        if(isBoss || stageEnd){
+            spawnEnd = true;
         }
 
         //소환 함수
@@ -631,6 +652,24 @@ public class GameManager : MonoBehaviour
         if((int)_sec>59){
             _sec = 0;
             _min++;
+        }
+    }
+    void BossCheck(){
+        if(isBoss)
+            return;
+
+        if(_min>=5){
+            if(!boss1Clear){
+                Boss(1);
+            }
+        }
+        if(_min>=10){
+            if(!boss2Clear){
+                Boss(1);
+            }
+        }
+        if(_min>=15 && boss2Clear && boss1Clear){
+            Boss(2);
         }
     }
 
@@ -882,6 +921,7 @@ public class GameManager : MonoBehaviour
         PlayerPrefs.SetInt("GrobalGold",grobalGold);
         PlayerPrefs.SetString("Language",language);
         PlayerPrefs.Save();
+        Time.timeScale = 1;
         SceneManager.LoadScene(0);
     }
     public void playerDead()
@@ -910,18 +950,30 @@ public class GameManager : MonoBehaviour
     }
     public void ResurrectionButton()
     {
+        //현재는 광고가 없으니 바로 부활
+        playerMove.Boom(1000,true);
+        playerMove.playerDeadCount++;
+        playerDeadChancePanel.SetActive(false);
+        playerMove.playerDead = false;
+        playerMove.anim.SetBool("Dead",playerMove.playerDead);
+        playerMove.life = 0;
+        playerMove.life += playerMove.maxLife/2;
+        playerMove.gameObject.layer = 6;
+        Time.timeScale = 1;
+        pauseButton.SetActive(true);
+
         // 광고 시청 버튼을 누를 경우
-        RequestInterstitial();
+        // RequestInterstitial();
         
         // 광고 로딩 함수
-        StartCoroutine(showInterstitial());
-        IEnumerator showInterstitial(){
-            while(!this.interstitial.IsLoaded()){
-                yield return new WaitForSeconds(0.2f);
-            }
-            this.interstitial.Show();
-            myCanvas.sortingOrder = -1;
-        }
+        // StartCoroutine(showInterstitial());
+        // IEnumerator showInterstitial(){
+        //     while(!this.interstitial.IsLoaded()){
+        //         yield return new WaitForSeconds(0.2f);
+        //     }
+        //     this.interstitial.Show();
+        //     myCanvas.sortingOrder = -1;
+        // }
 
         // if (this.interstitial.IsLoaded()) {
         //     this.interstitial.Show();
@@ -987,7 +1039,7 @@ public class GameManager : MonoBehaviour
     }
     void TargetFind()
     {
-        if(targetCountTime>=1){
+        if(targetCountTime>=0.5f){
             for(int i=0;i<poolObj.Count;i++){
                 if(poolObj[i].activeSelf){ // 해당 적군이 활성화 되었을 경우
                     if(IsTargetVisible(cam, poolObj[i].transform)){ // 해당 적군이 화면 안에 있다면
@@ -1010,18 +1062,8 @@ public class GameManager : MonoBehaviour
             targetCountTime += Time.fixedDeltaTime;
         }
     }
-    void BoxAlarm()
-    {
-        //박스 위치를 알려주는 함수 만들어야 함
-    }
-    void BoxOpenItem()
-    {
-        //박스를 열면 캐릭터 조각을 준다!
-
-    }
-
     //광고 함수
-    private void RequestInterstitial()
+    /*private void RequestInterstitial()
     {
         // 주의! 실행 전 꼭 테스트로 실행 할 것!
         // 테스트 ca-app-pub-3940256099942544/1033173712
@@ -1042,19 +1084,19 @@ public class GameManager : MonoBehaviour
         AdRequest request = new AdRequest.Builder().Build();
         // Load the interstitial with the request.
         this.interstitial.LoadAd(request);
-    }
+    }*/
     public void HandleOnAdClosed(object sender, System.EventArgs args)
     {
         //광고가 닫혔을경우 부활
+        playerMove.Boom(1000,true);
         playerMove.playerDeadCount++;
         playerDeadChancePanel.SetActive(false);
-        Time.timeScale = 1;
         playerMove.playerDead = false;
         playerMove.anim.SetBool("Dead",playerMove.playerDead);
+        playerMove.life = 0;
         playerMove.life += playerMove.maxLife/2;
-        GameObject boom = objectManager.MakeObj("ItemBoom");
-        boom.transform.position = player.transform.position;
         playerMove.gameObject.layer = 6;
+        Time.timeScale = 1;
         pauseButton.SetActive(true);
     }
     void BoxCreat()
@@ -1067,6 +1109,8 @@ public class GameManager : MonoBehaviour
             enemy.transform.position = spawnPoints[ran].position;
             Rigidbody2D rigid = enemy.GetComponent<Rigidbody2D>();
             EnemyMove enemyLogic = enemy.GetComponent<EnemyMove>();
+            Rigidbody2D playerRigid = playerMove.GetComponent<Rigidbody2D>();
+            enemyLogic.playerRigid = playerRigid;
             enemyLogic.player = player;
             enemyLogic.playerLogic = playerMove;
             enemyLogic.objectManager = objectManager;
@@ -1074,5 +1118,56 @@ public class GameManager : MonoBehaviour
         } else {
             boxCreatTime -= Time.deltaTime;
         }
+    }
+    void Boss(int bossNum)
+    {
+        isBoss = true;
+        eventPanel.SetActive(true);
+        camAnim.SetBool("IsOn",true);
+        if(language == "English"){
+            eventText.text = "warning!\nBoss is coming.";
+        } else if(language == "Korean"){
+            eventText.text = "경고!\n보스가 등장합니다.";
+        }
+        if(bossNum == 1){ // 중간 보스
+            Invoke("EnemyClearAndBoss1",3f);
+        } else if(bossNum == 2){ // 마지막 보스
+            Invoke("EnemyClearAndBoss2",3f);
+        }
+        
+    }
+    void EnemyClearAndBoss1()
+    {
+        spawnEnd = true;
+        playerMove.EnemyOff();
+        bossHealthBar.SetActive(true);
+        GameObject enemy = objectManager.MakeObj(enemyObjs[2]);
+        enemy.transform.position = spawnPoints[20].position;
+        Rigidbody2D rigid = enemy.GetComponent<Rigidbody2D>();
+        EnemyMove enemyLogic = enemy.GetComponent<EnemyMove>();
+        Rigidbody2D playerRigid = playerMove.GetComponent<Rigidbody2D>();
+        enemyLogic.playerRigid = playerRigid;
+        enemyLogic.player = player;
+        enemyLogic.playerLogic = playerMove;
+        enemyLogic.objectManager = objectManager;
+        enemyLogic.gameManager = this;
+        enemyCount++;
+    }
+    void EnemyClearAndBoss2()
+    {
+        spawnEnd = true;
+        playerMove.EnemyOff();
+        bossHealthBar.SetActive(true);
+        GameObject enemy = objectManager.MakeObj(enemyObjs[1]);
+        enemy.transform.position = spawnPoints[20].position;
+        Rigidbody2D rigid = enemy.GetComponent<Rigidbody2D>();
+        EnemyMove enemyLogic = enemy.GetComponent<EnemyMove>();
+        Rigidbody2D playerRigid = playerMove.GetComponent<Rigidbody2D>();
+        enemyLogic.playerRigid = playerRigid;
+        enemyLogic.player = player;
+        enemyLogic.playerLogic = playerMove;
+        enemyLogic.objectManager = objectManager;
+        enemyLogic.gameManager = this;
+        enemyCount++;
     }
 }

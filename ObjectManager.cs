@@ -79,6 +79,10 @@ public class ObjectManager : MonoBehaviour
 
     public GameObject bulletEnemyAPrefab;
     public GameObject bulletEnemyBPrefab;
+    public GameObject bulletEnemyCPrefab;
+    public GameObject bulletEnemyDPrefab;
+    public GameObject bulletEnemyEPrefab;
+
     GameObject[] bulletPlayer0; // 삽
     GameObject[] bulletPlayer1; // 삼지창
     GameObject[] bulletPlayer2; // 돌
@@ -119,6 +123,9 @@ public class ObjectManager : MonoBehaviour
 
     GameObject[] bulletEnemyA;
     GameObject[] bulletEnemyB;
+    GameObject[] bulletEnemyC;
+    GameObject[] bulletEnemyD;
+    GameObject[] bulletEnemyE;
 
     //이펙트
     public GameObject overloadPrefab;
@@ -134,22 +141,26 @@ public class ObjectManager : MonoBehaviour
     GameObject[] box1;
     GameObject[] box2;
 
+    //보스 패턴 이펙트
+    public GameObject bossEffectPrefab;
+    GameObject[] bossEffect;
+
 
     GameObject[] targetPool;
 
     void Awake()
     {
         //적군
-        enemyA = new GameObject[200];
-        enemyB = new GameObject[200];
+        enemyA = new GameObject[800];
+        enemyB = new GameObject[100];
         enemyC = new GameObject[100];
-        enemyD = new GameObject[100];
+        enemyD = new GameObject[1];
         enemyE = new GameObject[1];
 
         //아이템
-        itemExp0 = new GameObject[2000];
-        itemExp1 = new GameObject[2000];
-        itemExp2 = new GameObject[2000];
+        itemExp0 = new GameObject[1000];
+        itemExp1 = new GameObject[500];
+        itemExp2 = new GameObject[500];
         itemCoin0 = new GameObject[100];
         itemCoin1 = new GameObject[100];
         itemCoin2 = new GameObject[100];
@@ -169,7 +180,7 @@ public class ObjectManager : MonoBehaviour
         bulletPlayer7 = new GameObject[200];
         bulletPlayer8 = new GameObject[30];
         bulletPlayer9 = new GameObject[1];
-        bulletPlayer10 = new GameObject[30];
+        bulletPlayer10 = new GameObject[100];
         bulletPlayer11 = new GameObject[100];
 
         bulletPlayer13 = new GameObject[100];
@@ -198,6 +209,9 @@ public class ObjectManager : MonoBehaviour
 
         bulletEnemyA = new GameObject[500];
         bulletEnemyB = new GameObject[500];
+        bulletEnemyC = new GameObject[5];
+        bulletEnemyD = new GameObject[5];
+        bulletEnemyE = new GameObject[5];
 
         //이펙트
         overload = new GameObject[100];
@@ -208,6 +222,9 @@ public class ObjectManager : MonoBehaviour
         //박스
         box1 = new GameObject[200];
         box2 = new GameObject[10];
+
+        //보스 패턴에 필요한 이펙트
+        bossEffect = new GameObject[10];
 
         Generate();
 
@@ -405,9 +422,23 @@ public class ObjectManager : MonoBehaviour
             bulletEnemyB[index] = Instantiate(bulletEnemyBPrefab);
             bulletEnemyB[index].SetActive(false);
         }
+        for(int index=0;index<bulletEnemyC.Length;index++){
+            bulletEnemyC[index] = Instantiate(bulletEnemyCPrefab);
+            bulletEnemyC[index].SetActive(false);
+        }
+        for(int index=0;index<bulletEnemyD.Length;index++){
+            bulletEnemyD[index] = Instantiate(bulletEnemyDPrefab);
+            bulletEnemyD[index].SetActive(false);
+        }
+        for (int index = 0; index < bulletEnemyE.Length; index++)
+        {
+            bulletEnemyE[index] = Instantiate(bulletEnemyEPrefab);
+            bulletEnemyE[index].SetActive(false);
+        }
+
 
         //이펙트
-        for(int index=0;index<overload.Length;index++){
+        for (int index=0;index<overload.Length;index++){
             overload[index] = Instantiate(overloadPrefab);
             overload[index].SetActive(false);
         }
@@ -425,6 +456,11 @@ public class ObjectManager : MonoBehaviour
         for(int index=0;index<box2.Length;index++){
             box2[index] = Instantiate(box2Prefab);
             box2[index].SetActive(false);
+        }
+        //보스 이펙트
+        for(int index=0;index<bossEffect.Length;index++){
+            bossEffect[index] = Instantiate(bossEffectPrefab);
+            bossEffect[index].SetActive(false);
         }
     }
         public GameObject MakeObj(string type)
@@ -571,7 +607,15 @@ public class ObjectManager : MonoBehaviour
             case "BulletEnemyB":
                 targetPool = bulletEnemyB;
                 break;
-
+            case "BulletEnemyC":
+                targetPool = bulletEnemyC;
+                break;
+            case "BulletEnemyD":
+                targetPool = bulletEnemyD;
+                break;
+            case "BulletEnemyE":
+                targetPool = bulletEnemyE;
+                break;
             //이펙트
             case "Overload":
                 targetPool = overload;
@@ -588,6 +632,10 @@ public class ObjectManager : MonoBehaviour
                 break;
             case "Box2":
                 targetPool = box2;
+                break;
+            //보스 이펙트
+            case "BossEffect":
+                targetPool = bossEffect;
                 break;
         }
         for (int index=0; index < targetPool.Length;index++){
@@ -742,7 +790,15 @@ public class ObjectManager : MonoBehaviour
             case "BulletEnemyB":
                 targetPool = bulletEnemyB;
                 break;
-
+            case "BulletEnemyC":
+                targetPool = bulletEnemyC;
+                break;
+            case "BulletEnemyD":
+                targetPool = bulletEnemyD;
+                break;
+            case "BulletEnemyE":
+                targetPool = bulletEnemyE;
+                break;
             //이펙트
             case "Overload":
                 targetPool = overload;
@@ -759,6 +815,10 @@ public class ObjectManager : MonoBehaviour
                 break;
             case "Box2":
                 targetPool = box2;
+                break;
+            //보스 이펙트
+            case "BossEffect":
+                targetPool = bossEffect;
                 break;
         }
         return targetPool;

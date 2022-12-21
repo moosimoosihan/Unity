@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.SceneManagement;
-using GoogleMobileAds.Api;
+//using GoogleMobileAds.Api;
 
 public class MainManager : MonoBehaviour
 {
@@ -54,49 +54,41 @@ public class MainManager : MonoBehaviour
     string curItem; // 현재 보고있는 아이템
 
     // 스탯 레벨
-    int attackLevel=0;
-    int lifeLevel=0;
-    int speedLevel=0;
+    int stateLevel;
     public Text[] stateLevelButtonTexts;
 
     //광고
-    private BannerView bannerView;
+    //private BannerView bannerView;
 
 
     void Start()
     {
         // Initialize the Google Mobile Ads SDK.
-        MobileAds.Initialize(initStatus => { });
-
-        RequestBanner();
+        //MobileAds.Initialize(initStatus => { });
+        //RequestBanner();
+        
         language = "English";
         character = "Wizard";
         characterNum = 0;
-
+        clearStage = 1;
         if(PlayerPrefs.HasKey("GrobalGold")){ // 골드가 저장된게 있다면
-            language = PlayerPrefs.GetString("Language");
             grobalGold = PlayerPrefs.GetInt("GrobalGold");
-            clearStage = PlayerPrefs.GetInt("ClearStage");
+        }
+        if(PlayerPrefs.HasKey("Character")){ // 저장된 케릭터가 있다면
             character = PlayerPrefs.GetString("Character");
+        }
+        if(PlayerPrefs.HasKey("CharacterNum")){ // 저장된 케릭터가 있다면
             characterNum = PlayerPrefs.GetInt("CharacterNum");
-            if (clearStage == 0){
-                clearStage = 1;
-            }
-        } else {
-            clearStage = 1;
-            PlayerPrefs.SetString("Character",character);
-            PlayerPrefs.SetInt("CharacterNum",characterNum);
         }
-        if(PlayerPrefs.HasKey("AttackLevel")){ //스탯 저장된 내용이 있다면
-            PlayerPrefs.GetInt("AttackLevel", attackLevel);
+        if(PlayerPrefs.HasKey("Language")){ // 저장된 언어가 있다면
+            language = PlayerPrefs.GetString("Language");
         }
-        if(PlayerPrefs.HasKey("LifeLevel")){ //스탯 저장된 내용이 있다면
-        PlayerPrefs.GetInt("LifeLevel", lifeLevel);
+        if(PlayerPrefs.HasKey("ClearStage")){ // 저장된 클리어 스테이지 수 가 있다면
+            clearStage = PlayerPrefs.GetInt("ClearStage");
         }
-        if(PlayerPrefs.HasKey("SpeedLevel")){ //스탯 저장된 내용이 있다면
-            PlayerPrefs.GetInt("SpeedLevel", speedLevel);
+        if(PlayerPrefs.HasKey("StateLevel")){ // 스탯 저장된 내용이 있다면
+            stateLevel = PlayerPrefs.GetInt("AttackLevel");
         }
-
         stage = clearStage;
         PlayerPrefs.Save();
         if(language == "English" || language == null){
@@ -265,7 +257,8 @@ public class MainManager : MonoBehaviour
 
         // 해당 레벨을 불러와 그만큼 버튼을 활성화 시켜야 함 레벨마다 가격이 달라짐!
 
-        // stateLevelPanel.SetActive(true);
+        //stateLevelPanel.SetActive(true);
+
     }
     public void HelpButton()
     {
@@ -362,11 +355,8 @@ public class MainManager : MonoBehaviour
         }
     }
     //광고 함수
-    private void RequestBanner()
+    /*private void RequestBanner()
     {
-        if(SceneManager.GetActiveScene().name == "PlayGame")
-            return;
-
         // 주의! 실행 전 꼭 테스트로 실행 할 것!
         // 테스트 ca-app-pub-3940256099942544/6300978111
         // 광고 ca-app-pub-4730748511418289/9025837610
@@ -393,5 +383,5 @@ public class MainManager : MonoBehaviour
 
         // Load the banner with the request.
         bannerView.LoadAd(request);
-    }
+    }*/
 }
