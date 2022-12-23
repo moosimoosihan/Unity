@@ -92,9 +92,12 @@ public class Bullet : MonoBehaviour
             elementalType = "Water";
         } else if(weaponType == -2){ // 휩쓸기 공격의 경우
             Invoke("ActiveOff", 0.2f);
-        } else if(weaponType == -4) // 보스 필살기의 경우
-        {
+        } else if(weaponType == -4){ // 보스 필살기의 경우
             Invoke("ActiveOff", 4f);
+        } else if(weaponType == -5){ // 보스 낙하 불 공격의 경우
+            Invoke("ActiveOff", 3f);
+        } else if(weaponType == -6){ // 보스 범위 바람 공격의 경우
+            Invoke("ActiveOff", 3f);
         }
     }
     void Update()
@@ -176,7 +179,7 @@ public class Bullet : MonoBehaviour
 
             energyForceTime -= Time.deltaTime;
             if(energyForceTime<=0){
-                GameObject bullet = objectManager.MakeObj("BulletPlayer7");
+                GameObject bullet = objectManager.Get(22);
                 Bullet bulletLogic = bullet.GetComponent<Bullet>();
                 bulletLogic.power = power/2;
                 Vector3 ranVec = new Vector3(Random.Range(0.5f,3.5f),Random.Range(-1.5f,-2.5f),0);
@@ -257,7 +260,7 @@ public class Bullet : MonoBehaviour
                         EnemyMove otherLogic = other.GetComponent<EnemyMove>();
                         switch(windChangeType){
                             case "Fire":
-                                otherLogic.IsFrie(this);
+                                otherLogic.IsFire(this);
                             break;
                             case "Ice":
                                 otherLogic.IsIce(this);
@@ -275,7 +278,7 @@ public class Bullet : MonoBehaviour
                 if(weaponType == 3){ // 아이스 붐이 적군이랑 만났을 경우
                     if(maxLevel){
                         for (int i =0;i<10;i++){
-                            GameObject bullet = objectManager.MakeObj("BulletPlayer3");
+                            GameObject bullet = objectManager.Get(18);
                             bullet.transform.position = transform.position;
                             Bullet bulletLogic = bullet.GetComponent<Bullet>();
                             Rigidbody2D rigid = bullet.GetComponent<Rigidbody2D>();
@@ -298,7 +301,7 @@ public class Bullet : MonoBehaviour
                     TrapOn();
                 }
             } else if(weaponType == 11 && turretBullet){ // 터렛이 쏜 총알 일 경우
-                GameObject dieEffect = GameManager.instance.objectManager.MakeObj("Overload");
+                GameObject dieEffect = GameManager.instance.objectManager.Get(58);
                 Effect dieEffectLogic = dieEffect.GetComponent<Effect>();
                 dieEffect.transform.position = transform.position;
                 dieEffectLogic.power = power;
@@ -325,7 +328,7 @@ public class Bullet : MonoBehaviour
     void MeteoAttack()
     {
         for(int i = 0;i<5;i++){
-            GameObject bullet = objectManager.MakeObj("BulletPlayer7");
+            GameObject bullet = objectManager.Get(22);
             Bullet bulletLogic = bullet.GetComponent<Bullet>();
             bulletLogic.power = power/2;
             Vector3 ranVec = new Vector3(Random.Range(0.5f,3.5f),Random.Range(-1.5f,-2.5f),0);

@@ -4,6 +4,7 @@ using UnityEngine;
 using UnityEngine.UI;
 using System.IO;
 using UnityEngine.SceneManagement;
+using Cinemachine;
 //using GoogleMobileAds.Api;
 
 
@@ -30,7 +31,6 @@ public class GameManager : MonoBehaviour
     public int enemyCount;
     public Camera cam;
     public List<GameObject> poolObj;
-    bool getPool = false;
 
     //플레이어 함수
     public PlayerMove playerMove;
@@ -44,10 +44,8 @@ public class GameManager : MonoBehaviour
 
 
     //적군 소환
-    public List<EnemySpawn> spawnList;
     public string[] enemyObjs;
     public Transform[] spawnPoints;
-    public float nextSpawnDelay;
     public float curSpawnDelay;
     public ObjectManager objectManager;
     public int spawnIndex;
@@ -55,7 +53,10 @@ public class GameManager : MonoBehaviour
     public int stage;
     public bool bossClear;
     public bool stageEnd;
-    public int wave;
+    bool wave1;
+    bool wave2;
+    bool wave3;
+    float spawnTime = 0.3f;
 
     //UI 함수
     public Image expBar;
@@ -81,7 +82,6 @@ public class GameManager : MonoBehaviour
     public Text[] HomeButtonText;
     public Text continueButtonText;
     public Text explaneText;
-    public Text waveText;
 
 
     //레벨업 셀렉 UI
@@ -112,6 +112,8 @@ public class GameManager : MonoBehaviour
 
     float targetCountTime; //새로운 타겟을 선별 하는 타임 함수
     bool isLevelUp = false;
+    public GameObject bossSquare; // 보스 전장
+    public CinemachineVirtualCamera cineCam;
 
     //상자 함수
     float boxCreatTime;
@@ -200,10 +202,10 @@ public class GameManager : MonoBehaviour
                                             {"Haven't learned yet.","Critical Damage155%\nCritical Chance5%","Critical Damage160%\nCritical Chance10%","Critical Damage165%\nCritical Chance15%","Critical Damage170%\nCritical Chance20%","Critical Damage175%\nCritical Chance25%",""}};
                 } else if( character == "Hunter2"){
                 weaponText = new string[]{"Barbed Armor", "Hammer", "Mace", "Shield Charge", "Light Cross", "Ascension","Delay","Speed","Life","Power","Magnet","Critical"};
-                weaponExText = new string[,] {{"Deals damage to nearby enemies.\nDamage Up according to the number of enemies killed\nType physical","Damage Up","Damage Up","Damage Up","Damage Up","Instant death with 5% chance \nExcluding bosses and elite monsters"},
-                                            {"Throws a spinning hammer.\nPhysical type","Up damage","Up damage","Up damage","Up damage","Throws hammers in both directions."},
-                                            {"Wields a mace.\nPhysical type","Up damage\nUp speed","Up damage\nUp speed","Up damage\nUp speed","Up damage\nUp speed"," Mace size Up."},
-                                            {"Momentarily movement speed Up and pushes nearby enemies.\nPhysical type","Up damage","Up damage","Up damage","Up damage","Pushes enemies further away.\nbecome invincible for a while."},
+                weaponExText = new string[,] {{"Deals damage to nearby enemies.\nDamage Up according to the number of enemies killed\nType None","Damage Up","Damage Up","Damage Up","Damage Up","Instant death with 5% chance \nExcluding bosses and elite monsters"},
+                                            {"Throws a spinning hammer.\nNone type","Up damage","Up damage","Up damage","Up damage","Throws hammers in both directions."},
+                                            {"Wields a mace.\nNone type","Up damage\nUp speed","Up damage\nUp speed","Up damage\nUp speed","Up damage\nUp speed"," Mace size Up."},
+                                            {"Momentarily movement speed Up and pushes nearby enemies.\nNone type","Up damage","Up damage","Up damage","Up damage","Pushes enemies further away.\nbecome invincible for a while."},
                                             {"Emits light in the shape of a cross.\nType light","Damage up","Damage up","Damage up","Damage up","Cross turns."},
                                             {"A beam of light descends from the sky.\nType Light","Up damage\nUp speed","Up damage\nUp speed","Up damage\nUp speed","Up damage\nUp speed" ,"Damage is greatly Up."},
 
@@ -227,13 +229,13 @@ public class GameManager : MonoBehaviour
                                             {"Haven't learned yet.","Mag Scale 200%","Mag Scale 275%","Mag Scale 325%","Mag Scale 375%","Mag Scale 450%",""},
                                             {"Haven't learned yet.","Critical Damage155%\nCritical Chance5%","Critical Damage160%\nCritical Chance10%","Critical Damage165%\nCritical Chance15%","Critical Damage170%\nCritical Chance20%","Critical Damage175%\nCritical Chance25%",""}};
             } else if( character == "Hunter3"){
-                weaponText = new string[]{"Drill","Bouncy ball","toss at random","Land mine","Turret","Bow","Delay","Speed","Life","Power","Magnet","Critical"};
-                weaponExText = new string[,] {{"Shoots a wave of electrical damage every 5 seconds.\nType Electric","Up damage","Up damage","Up damage","Up damage","Shooted every 2 seconds.\nSurge A fire is created where it passes.\nAn additional type of fire"},
-                                            {"Shoots water and energy waves at the same time.\nType Water, Physical", "Damage up", "Damage up", "Damage up", "Damage up", "Physical damage turns into ice damage.\n nadditional type of ice"},
+                weaponText = new string[]{"Drill","LightningForce","WaterForece","Land mine","Turret","Bow","Delay","Speed","Life","Power","Magnet","Critical"};
+                weaponExText = new string[,] {{"Shoots a wave of electrical damage every 5 seconds.\nType Lightning","Up damage","Up damage","Up damage","Up damage","Shooted every 2 seconds.\nSurge A fire is created where it passes.\nAn additional type of fire"},
+                                            {"Shoots water and energy waves at the same time.\nType Water, None", "Damage up", "Damage up", "Damage up", "Damage up", "None damage turns into ice damage.\n nadditional type of ice"},
                                             {"Uses skill randomly.\nType unknown","Damage Up\nnumber Up","Damage Up\nnumber Up","Damage Up\nnumber Up","Damage Up\nnumber Up" ,"Ultimate fires randomly."},
-                                            {"Places a mine in a random location every 3 seconds.\nType Electric","Up damage\nUp size","Up damage\nUp size","Up damage\nUp size","Up damage \nUp size","Places a mine every 1 sec."},
-                                            {"Install an attacking turret.\nType physical","Up damage","Up damage","Up damage","Up damage","The turret fires fire"},
-                                            {"Throws a bow every 2 seconds.\nPhysical type","Up damage\nUp hitting objects","Up damage\nUp hitting objects","Up damage\nUp hitting objects","Up damage\nStrikes Up entity","Up damage\nUp hit entity\nFires every second."},
+                                            {"Places a mine in a random location every 3 seconds.\nType Lightning","Up damage\nUp size","Up damage\nUp size","Up damage\nUp size","Up damage \nUp size","Places a mine every 1 sec."},
+                                            {"Install an attacking turret.\nType None","Up damage","Up damage","Up damage","Up damage","The turret fires fire"},
+                                            {"Throws a bow every 2 seconds.\nNone type","Up damage\nUp hitting objects","Up damage\nUp hitting objects","Up damage\nUp hitting objects","Up damage\nStrikes Up entity","Up damage\nUp hit entity\nFires every second."},
 
                                             {"Delay 10%","Delay 20%","Delay 30%","Delay 40%","Delay 50%",""},
                                             {"Speed+20%","Speed+40%","Speed+60%","Speed+80%","Speed+100%",""},
@@ -394,7 +396,7 @@ public class GameManager : MonoBehaviour
                                             {"아이템 획득 범위 증가","아이템 획득 범위 증가","아이템 획득 범위 증가","아이템 획득 범위 증가","아이템 획득 범위 증가",""},
                                             {"155% 크리티컬 데미지\n5% 크리티컬 확률","160% 크리티컬 데미지\n10% 크리티컬 확률","165% 크리티컬 데미지\n15% 크리티컬 확률","170% 크리티컬 데미지\n20% 크리티컬 확률","175% 크리티컬 데미지\n25% 크리티컬 확률",""}};
                 pauseExText = new string[,] {{"아직 배우지 못했습니다.","데미지 60","데미지 100","데미지 140","데미지 180","데미지 220","데미지 300\n2초마다 발사합니다.\n불길 생성"},
-                                            {"아직 배우지 못했습니다.","데미지 20 x 2","데미지 40 x 2","데미지 60 x 2","데미지 80 x 2","데미지 100 x 2","데미지 150 x 2\n추가 타입 얼음"},
+                                            {"아직 배우지 못했습니다.","데미지 30 x 2","데미지 40 x 2","데미지 60 x 2","데미지 80 x 2","데미지 100 x 2","데미지 150 x 2\n추가 타입 얼음"},
                                             {"아직 배우지 못했습니다.","1레벨 스킬","2레벨 스킬","3레벨 스킬","4레벨 스킬","5레벨 스킬","랜덤한 궁극기 스킬"},
                                             {"아직 배우지 못했습니다.","데미지 80\n크기 100%","데미지 160\n크기 110%","데미지 240\n크기 120%","데미지 320\n크기 130%","데미지 400\n크기 140%","데미지 480\n크기 150%\n1초마다 생성"},
                                             {"아직 배우지 못했습니다.","데미지 50\n크기 100%","데미지 100\n크기 110%","데미지 150\n크기 120%","데미지 200\n크기 130%","데미지 250\n크기 140%","데미지 300\n크기 150%\n추가 타입 불"},
@@ -444,114 +446,40 @@ public class GameManager : MonoBehaviour
 
         for (int i = 0;i<5;i++){ // 처음 시작시 랜덤하게 5개 주고 시작
             Vector3 ranVec = new Vector3(Random.Range(-3.0f,3.0f),Random.Range(0.5f,3.0f),0);
-            GameObject itemExp0 = objectManager.MakeObj("ItemExp0");
+            GameObject itemExp0 = objectManager.Get(5);
             itemExp0.transform.position = playerPos.position + ranVec;
         }
         
         StartLevelUp();
     }
-    public void StageStart()
-    {
-        //적군 스폰 파일 읽기
-        ReadSpawnFile();
-    }
+
     public void StageEnd()
     {
         stageEnd= true;
         Invoke("StageClear",5f);
     }
-    //적군소환을 위한 리스폰 데이터 읽기
-    void ReadSpawnFile()
-    {
-        //변수 초기화
-        spawnList.Clear();
-        spawnIndex = 0;
-        spawnEnd = false;
 
-        //리스폰 파일 읽기(텍스트 파일이 아니면 null 처리) / System.IO 필요
-        TextAsset textFile = Resources.Load("Stage1" /*+ stage*/) as TextAsset;
-        StringReader stringReader = new StringReader(textFile.text);
-
-        while(stringReader != null)
-        {
-            string line = stringReader.ReadLine();
-            Debug.Log(line);
-            //만약 비었다면 끝내라
-            if(line == null)
-                break;
-                
-            //리스폰 데이터 생성
-            EnemySpawn spawnData = new EnemySpawn();
-            spawnData.delay = float.Parse(line.Split(',')[0]);
-            spawnData.type = line.Split(',')[1];
-            spawnData.point = int.Parse(line.Split(',')[2]);
-            spawnList.Add(spawnData);
-        }
-        //파일을 꼭 닫아주자
-        stringReader.Close();
-
-        //첫번재 스폰 딜레이 적용
-        nextSpawnDelay = spawnList[0].delay;
-    }
 
     void spawnEnemy()
     {
-        //랜덤으로 부를 경우
-        // int ranEnemy = Random.Range(0, enemyObjs.Length);
-        // int ranPoint = Random.Range(0, spawnPoints.Length);
-        int enemyIndex = 0;
-        switch(spawnList[spawnIndex].type){
-            case "A":
-                enemyIndex = 5;
-                break;
-            case "B":
-                enemyIndex = 4;
-                break;
-            case "C":
-                enemyIndex = 3;
-                break;
-            case "D":
-                bossHealthBar.SetActive(true);
-                enemyIndex = 2;
-                break;
-            case "E":
-                bossHealthBar.SetActive(true);
-                enemyIndex = 1;
-                break;
-            case "Event1":
-                enemyIndex = 6;
-                eventPanel.SetActive(true);
-                camAnim.SetBool("IsOn",true);
-                if(language == "English"){
-                    eventText.text = "warning!\nMonsters are coming.";
-                } else if(language == "Korean"){
-                    eventText.text = "경고!\n몬스터 무리가 다가옵니다.";
-                }
-                break;
-            case "EventOut":
-                enemyIndex = 6;
-                //적군이 더 이상 없을 경우 아웃(혹시 있다면 시간을 딜레이)
-                camAnim.SetBool("IsOn",false);
-            break;
-            case "SS":
-                spawnEnd = true;
-                enemyIndex = 6;
-            break;
-            case "Wave":
-                wave++;
-                enemyIndex = 6;
-                eventPanel.SetActive(true);
-                if(language == "English"){
-                    eventText.text = "Wave " + wave;
-                } else if(language == "Korean"){
-                    eventText.text = "웨이브 " + wave;
-                }
-            break;
-        }
-        if(enemyIndex!=6){
-            int enemyPoint = spawnList[spawnIndex].point;
-            GameObject enemy = objectManager.MakeObj(enemyObjs[enemyIndex]);
-            enemy.transform.position = spawnPoints[enemyPoint].position;
+        //소환 함수
+        curSpawnDelay += Time.deltaTime;
+        if(curSpawnDelay > spawnTime && !spawnEnd){
+            int ranEnemy;
+            if(_min < 4 ){
+                ranEnemy = 0;
+            } else if(_min < 9){
+                ranEnemy = Random.Range(0,2);
+            } else {
+                ranEnemy = Random.Range(0,3);
+            }
+            int ranPoint = Random.Range(0, spawnPoints.Length-1);
+
+            GameObject enemy = objectManager.Get(ranEnemy);
+            if(!poolObj.Contains(enemy)){
+                poolObj.Add(enemy);
+            }
+            enemy.transform.position = spawnPoints[ranPoint].position;
             Rigidbody2D rigid = enemy.GetComponent<Rigidbody2D>();
             EnemyMove enemyLogic = enemy.GetComponent<EnemyMove>();
             Rigidbody2D playerRigid = playerMove.GetComponent<Rigidbody2D>();
@@ -561,23 +489,34 @@ public class GameManager : MonoBehaviour
             enemyLogic.objectManager = objectManager;
             enemyLogic.gameManager = this;
             enemyCount++;
+            curSpawnDelay = 0;
+            // 2분 30초
+            if(_min >= 2 && !wave1){
+                wave1 = true;
+                Event("EventIn");
+            } else if(wave1 && _min >= 3){
+                Event("EventOut");
+            }
+            // 7분 30초
+            if(_min >= 7 && !wave2){
+                wave2 = true;
+                Event("EventIn");
+            } else if(wave2 && _min >= 8){
+                Event("EventOut");
+            }
+            // 12분 30초
+            if(_min >= 12 && !wave3){
+                wave3 = true;
+                Event("EventIn");
+            } else if(wave3 && _min >= 13){
+                Event("EventOut");
+            }
         }
-        //리스폰 인덱스 증가
-        spawnIndex++;
-        //스폰이 끝난 경우
-        if(spawnIndex == spawnList.Count){
-            spawnEnd = true;
-            return;
-        }
-        //다음 리스폰 딜레이 갱신
-        nextSpawnDelay = spawnList[spawnIndex].delay;
     }
     void Awake()
     {
         stage = PlayerPrefs.GetInt("CurStage");
         instance = this;
-        spawnList = new List<EnemySpawn>();
-        StageStart();
     }
     void Update()
     {
@@ -590,12 +529,6 @@ public class GameManager : MonoBehaviour
         }
         
         BoxCreat();
-
-        if(language == "English"){
-            waveText.text = "Wave " + wave;
-        } else if(language == "Korean"){
-            waveText.text = "웨이브 " + wave;
-        }
 
         // exp 게이지
         expBar.fillAmount = playerMove.exp / levelUpExp;
@@ -615,22 +548,14 @@ public class GameManager : MonoBehaviour
         //플레이어를 따라가는 UI
         playerUI.transform.position = Camera.main.WorldToScreenPoint(player.transform.position + new Vector3(0, -0.4f, 0));
 
-        if(enemyCount <= 5 && spawnEnd && !bossClear){
+        if(spawnEnd && !bossClear){
             spawnEnd = false;
         }
         if(isBoss || stageEnd){
             spawnEnd = true;
         }
 
-        //소환 함수
-        curSpawnDelay += Time.deltaTime;
-        if(curSpawnDelay > nextSpawnDelay && !spawnEnd){
-            spawnEnemy();
-            curSpawnDelay = 0;
-        }
-        if(!getPool){
-            GetPoolEnemy();
-        }
+        spawnEnemy();
         
         //레벨 업 함수
         if(playerMove.exp >= levelUpExp && !isLevelUp){
@@ -855,6 +780,26 @@ public class GameManager : MonoBehaviour
             }
         }
     }
+    void Event(string type)
+    {
+        switch(type){
+            case "EventIn":
+                eventPanel.SetActive(true);
+                spawnTime = 0.1f;
+                // camAnim.SetBool("IsOn",true);
+                if(language == "English"){
+                    eventText.text = "warning!\nMonsters are coming.";
+                } else if(language == "Korean"){
+                    eventText.text = "경고!\n몬스터 무리가 다가옵니다.";
+                }
+                break;
+            case "EventOut":
+                spawnTime = 0.5f;
+                // 적군이 더 이상 없을 경우 아웃(혹시 있다면 시간을 딜레이)
+                // camAnim.SetBool("IsOn",false);
+            break;
+        }
+    }
     void StartLevelUp()
     {
         //시작시 무기 스킬 고르는 함수
@@ -864,7 +809,7 @@ public class GameManager : MonoBehaviour
     }
     public void DamageText(Vector3 pos, float dmg, string type, bool criticalCheck)
     {
-        GameObject damageText = objectManager.MakeObj("DamageText");
+        GameObject damageText = objectManager.Get(60);
         DamageText damageTextLogic = damageText.GetComponent<DamageText>();
 
         damageText.transform.position = pos;
@@ -872,7 +817,7 @@ public class GameManager : MonoBehaviour
     }
     public void StateText(Vector3 pos, string type)
     {
-        GameObject damageText = objectManager.MakeObj("DamageText");
+        GameObject damageText = objectManager.Get(60);
         DamageText damageTextLogic = damageText.GetComponent<DamageText>();
         damageTextLogic.language = language;
 
@@ -951,6 +896,7 @@ public class GameManager : MonoBehaviour
     public void ResurrectionButton()
     {
         //현재는 광고가 없으니 바로 부활
+        playerMove.PlayerStateClear();
         playerMove.Boom(1000,true);
         playerMove.playerDeadCount++;
         playerDeadChancePanel.SetActive(false);
@@ -1027,18 +973,9 @@ public class GameManager : MonoBehaviour
         Time.timeScale = 0;
     }
 
-    // 찾기 전 먼저 적군과 상자 위치를 받아오기
-    void GetPoolEnemy()
-    {
-        getPool = true;
-        for(int x=0;x<enemyObjs.Length;x++){
-            for(int i = 0;i<objectManager.GetPool(enemyObjs[x]).Length;i++){
-                poolObj.Add(objectManager.GetPool(enemyObjs[x])[i]);
-            }
-        }
-    }
     void TargetFind()
     {
+        // 적군이 012
         if(targetCountTime>=0.5f){
             for(int i=0;i<poolObj.Count;i++){
                 if(poolObj[i].activeSelf){ // 해당 적군이 활성화 되었을 경우
@@ -1050,7 +987,8 @@ public class GameManager : MonoBehaviour
                                 float Distance = Vector3.Distance(playerPos.position, poolObj[y].transform.position);
                                 if (Distance < shortDis){ // 위에서 잡은 기준으로 거리 재기
                                     targetEnemy = poolObj[y];
-                                    shortDis = Distance;                                    }
+                                    shortDis = Distance;
+                                }
                             }
                         }
                     }
@@ -1088,6 +1026,7 @@ public class GameManager : MonoBehaviour
     public void HandleOnAdClosed(object sender, System.EventArgs args)
     {
         //광고가 닫혔을경우 부활
+        playerMove.PlayerStateClear();
         playerMove.Boom(1000,true);
         playerMove.playerDeadCount++;
         playerDeadChancePanel.SetActive(false);
@@ -1105,7 +1044,7 @@ public class GameManager : MonoBehaviour
             int ranTime = Random.Range(30,60);
             boxCreatTime = ranTime;
             int ran = Random.Range(0,spawnPoints.Length-1);
-            GameObject enemy = objectManager.MakeObj(enemyObjs[0]);
+            GameObject enemy = objectManager.Get(61);
             enemy.transform.position = spawnPoints[ran].position;
             Rigidbody2D rigid = enemy.GetComponent<Rigidbody2D>();
             EnemyMove enemyLogic = enemy.GetComponent<EnemyMove>();
@@ -1123,7 +1062,7 @@ public class GameManager : MonoBehaviour
     {
         isBoss = true;
         eventPanel.SetActive(true);
-        camAnim.SetBool("IsOn",true);
+        // camAnim.SetBool("IsOn",true);
         if(language == "English"){
             eventText.text = "warning!\nBoss is coming.";
         } else if(language == "Korean"){
@@ -1141,7 +1080,10 @@ public class GameManager : MonoBehaviour
         spawnEnd = true;
         playerMove.EnemyOff();
         bossHealthBar.SetActive(true);
-        GameObject enemy = objectManager.MakeObj(enemyObjs[2]);
+        GameObject enemy = objectManager.Get(3);
+        if(!poolObj.Contains(enemy)){
+            poolObj.Add(enemy);
+        }
         enemy.transform.position = spawnPoints[20].position;
         Rigidbody2D rigid = enemy.GetComponent<Rigidbody2D>();
         EnemyMove enemyLogic = enemy.GetComponent<EnemyMove>();
@@ -1151,6 +1093,9 @@ public class GameManager : MonoBehaviour
         enemyLogic.playerLogic = playerMove;
         enemyLogic.objectManager = objectManager;
         enemyLogic.gameManager = this;
+        cineCam.Follow = bossSquare.transform;
+        bossSquare.SetActive(true);
+        bossSquare.transform.position = playerMove.transform.position;
         enemyCount++;
     }
     void EnemyClearAndBoss2()
@@ -1158,7 +1103,10 @@ public class GameManager : MonoBehaviour
         spawnEnd = true;
         playerMove.EnemyOff();
         bossHealthBar.SetActive(true);
-        GameObject enemy = objectManager.MakeObj(enemyObjs[1]);
+        GameObject enemy = objectManager.Get(4);
+        if(!poolObj.Contains(enemy)){
+            poolObj.Add(enemy);
+        }
         enemy.transform.position = spawnPoints[20].position;
         Rigidbody2D rigid = enemy.GetComponent<Rigidbody2D>();
         EnemyMove enemyLogic = enemy.GetComponent<EnemyMove>();
@@ -1168,6 +1116,9 @@ public class GameManager : MonoBehaviour
         enemyLogic.playerLogic = playerMove;
         enemyLogic.objectManager = objectManager;
         enemyLogic.gameManager = this;
+        cineCam.Follow = bossSquare.transform;
+        bossSquare.SetActive(true);
+        bossSquare.transform.position = playerMove.transform.position;
         enemyCount++;
     }
 }

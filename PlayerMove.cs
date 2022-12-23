@@ -106,6 +106,55 @@ public class PlayerMove : MonoBehaviour
 
     float playerDamagedTime;
 
+    // 플레이어 상태 함수
+    //화염
+    public bool isFire; //불에 붙었는가?
+    public float fireOffCount;
+    public float fireDamage;
+    float fireDamageTextTime;
+
+    //얼음
+    public bool isIce; // 얼음 상태인가? (빙결 x)
+    public float iceOffCount = 3f;
+    float iceSlow = 1f;
+    public float iceDamage;
+    public bool isFreezingOn;
+    float freezingOffCount = 3f;
+    int freezStop = 1;
+
+    //전기
+    public bool isLightning;
+    public float lightningOffCount = 3f;
+    float lightingDamageTextTime;
+    public bool ElectricShockOn;
+    float ElectricShockOffCount = 3f;
+    float ElectricShockDamageTextTime;
+    public float lightningDamage;
+    int lightningStop = 1;
+    //물
+    public bool isWater;
+    public float waterDamage;
+    float waterDamageTextTime;
+    public float waterOffCount;
+
+    //바람
+    float windDamageTextTime;
+
+    //물리
+    float noneDamageTextTime;
+
+    //빛
+    float lightDamageTextTime;
+
+    //독
+    float poisonCount;
+    float poisonDamageTextTime;
+    bool isPoison;
+    float poisonDamage;
+
+    //맞은 총알
+    Bullet bullet;
+
     void Start()
     {
         //모든 무기 레벨을 0으로 초기화
@@ -187,6 +236,7 @@ public class PlayerMove : MonoBehaviour
             Reload();
             PassiveHealing();
             Shield();
+            PlayerState();
         }
     }
     void FixedUpdate()
@@ -194,7 +244,7 @@ public class PlayerMove : MonoBehaviour
         if(playerDead)
             return;
 
-        Vector2 nextVec = inputVec * speed * Time.fixedDeltaTime;
+        Vector2 nextVec = inputVec * speed * Time.fixedDeltaTime *(iceSlow * freezStop * lightningStop);
         rigid.MovePosition(rigid.position + nextVec);
     }
     void LateUpdate()
@@ -243,6 +293,14 @@ public class PlayerMove : MonoBehaviour
                     spriteRenderer.color = new Color(1,0,0);
                     playerDamagedTime += Time.deltaTime;
                 }
+            }
+        } else if(other.gameObject.tag == "EnemyBullet"){
+            if(playerDamagedTime>=1){
+                PlayerDamaged(other.gameObject, "Bullet");
+                playerDamagedTime = 0;
+            } else {
+                spriteRenderer.color = new Color(1,0,0);
+                playerDamagedTime += Time.deltaTime;
             }
         }
     }
@@ -297,30 +355,59 @@ public class PlayerMove : MonoBehaviour
 
             //적군 공격 타입 별 플레이어 데미지 입는 함수
             if(enemyLogic.elementalType =="Fire"){
-
+                IsFire(bullet);
             } else if(enemyLogic.elementalType =="Ice") {
-
+                IsIce(bullet);
             } else if(enemyLogic.elementalType =="Lightning"){
-
+                IsLightning(bullet);
             } else if(enemyLogic.elementalType =="Water"){
-
+                IsWater(bullet);
+            } else if(enemyLogic.elementalType =="Wind"){
+                IsWind(bullet);
+            } else if(enemyLogic.elementalType == "Poison"){
+                poisonCount = 3f;
+                poisonDamage = bullet.power;
+                isPoison = true;
             }
         } else if(type=="Bullet"){
             Bullet bullet = target.gameObject.GetComponent<Bullet>();
             gameManager.DamageText(transform.position, bullet.power, bullet.elementalType, bullet.enemyCritical);
             life -= bullet.power;
             PlayerRed();
+            this.bullet = bullet;
+            if(bullet.elementalType == "Fire"){
+                IsFire(bullet);
+            } else if(bullet.elementalType == "Ice"){
+                IsIce(bullet);
+            } else if(bullet.elementalType == "Lightning"){
+                IsLightning(bullet);
+            } else if(bullet.elementalType == "Water"){
+                IsWater(bullet);
+            } else if(bullet.elementalType == "Wind"){
+                IsWind(bullet);
+            } else if(bullet.elementalType == "Poison"){
+                poisonCount = 3f;
+                poisonDamage = bullet.power;
+                isPoison = true;
+            }
             if (bullet.enemyWeapon && !bullet.throwBullet)
             {
                 target.gameObject.SetActive(false);
             }
 
-        } else if(type=="Effect"){
+        } else if(type=="EnemyEffect"){
             Effect effect = target.gameObject.GetComponent<Effect>();
             gameManager.DamageText(transform.position, effect.power, effect.elementalType, false);
             life -= effect.power;
             PlayerRed();
         }
+    }
+    public void PlayerStateHit(float power, string type)
+    {
+        //맞은 데미지 출력
+        gameManager.DamageText(transform.position, power, type, false);
+        life -= power;
+        PlayerRed();
     }
 
     void OnCollisionEnter2D(Collision2D other) {
@@ -365,18 +452,18 @@ public class PlayerMove : MonoBehaviour
                 break;
                 //자석
                 case "Mag":
-                    GameObject[] itemExp0 = objectManager.GetPool("ItemExp0");
-                    for(int i=0;i<itemExp0.Length;i++){
+                    List<GameObject> itemExp0 = objectManager.pools[5];
+                    for(int i=0;i<itemExp0.Count;i++){
                         Item itemExp0Logic = itemExp0[i].GetComponent<Item>();
                         itemExp0Logic.isMagnetOn = true;
                     }
-                    GameObject[] itemExp1 = objectManager.GetPool("ItemExp1");
-                    for(int i=0;i<itemExp1.Length;i++){
+                    List<GameObject> itemExp1 = objectManager.pools[6];
+                    for(int i=0;i<itemExp1.Count;i++){
                         Item itemExp1Logic = itemExp1[i].GetComponent<Item>();
                         itemExp1Logic.isMagnetOn = true;
                     }
-                    GameObject[] itemExp2 = objectManager.GetPool("ItemExp2");
-                    for(int i=0;i<itemExp2.Length;i++){
+                    List<GameObject> itemExp2 = objectManager.pools[7];
+                    for(int i=0;i<itemExp2.Count;i++){
                         Item itemExp2Logic = itemExp2[i].GetComponent<Item>();
                         itemExp2Logic.isMagnetOn = true;
                     }
@@ -1092,7 +1179,7 @@ public class PlayerMove : MonoBehaviour
                 }
                 switch(weaponLevel[1]){ // 2 파동
                     case 1:
-                        EnergyForce2(20,0,false);
+                        EnergyForce2(30,0,false);
                     break;
                     case 2:
                         EnergyForce2(40,1,false);
@@ -1854,7 +1941,7 @@ public class PlayerMove : MonoBehaviour
         for (int i=0;i<num;i++){
             float ranX = Random.Range(-2f,2f);
             float ranZ = Random.Range(-2f,2f);
-            GameObject bullet = objectManager.MakeObj("BulletPlayer0");
+            GameObject bullet = objectManager.Get(15);
             bullet.transform.position = transform.position;
             Rigidbody2D rigid = bullet.GetComponent<Rigidbody2D>();
             Bullet bulletLogic = bullet.GetComponent<Bullet>();
@@ -1868,7 +1955,7 @@ public class PlayerMove : MonoBehaviour
     }
     void WeaponTrident(float dmg, float scale, int count,bool maxLevel)
     {
-        GameObject bullet = objectManager.MakeObj("BulletPlayer1");
+        GameObject bullet = objectManager.Get(16);
         Bullet bulletLogic = bullet.GetComponent<Bullet>();
         bullet.transform.position = transform.position;
         Rigidbody2D rigid = bullet.GetComponent<Rigidbody2D>();
@@ -1883,7 +1970,7 @@ public class PlayerMove : MonoBehaviour
         rigid.AddForce(dirVec.normalized * bulletSpeed, ForceMode2D.Impulse);
         if(maxLevel){
             //뒤
-            GameObject bullet2 = objectManager.MakeObj("BulletPlayer1");
+            GameObject bullet2 = objectManager.Get(16);
             Bullet bulletLogic2 = bullet2.GetComponent<Bullet>();
             bullet2.transform.position = transform.position;
             Rigidbody2D rigid2 = bullet2.GetComponent<Rigidbody2D>();
@@ -1899,7 +1986,7 @@ public class PlayerMove : MonoBehaviour
     }
     void WeaponIceSpear(float dmg, float scale, int count, bool maxLevel)
     {
-        GameObject bullet = objectManager.MakeObj("BulletPlayer3");
+        GameObject bullet = objectManager.Get(18);
         Bullet bulletLogic = bullet.GetComponent<Bullet>();
         bullet.transform.position = transform.position;
         Rigidbody2D rigid = bullet.GetComponent<Rigidbody2D>();
@@ -1917,7 +2004,7 @@ public class PlayerMove : MonoBehaviour
     }
     void WeaponMachineGun(float dmg)
     {
-        GameObject bullet = objectManager.MakeObj("BulletPlayer4");
+        GameObject bullet = objectManager.Get(19);
         Vector3 ranVec = new Vector3(Random.Range(-0.2f,0.3f),Random.Range(-0.2f,0.3f),0);
         bullet.transform.position = transform.position + ranVec;
         Rigidbody2D rigid = bullet.GetComponent<Rigidbody2D>();
@@ -1936,7 +2023,7 @@ public class PlayerMove : MonoBehaviour
     {
         if(!maxLevel){
             for(int index = 0;index < count;index++){
-                GameObject bullet = objectManager.MakeObj("BulletPlayer5");
+                GameObject bullet = objectManager.Get(20);
                 bullet.transform.position = transform.position;
                 Rigidbody2D rigid = bullet.GetComponent<Rigidbody2D>();
                 Bullet bulletLogic = bullet.GetComponent<Bullet>();
@@ -1952,7 +2039,7 @@ public class PlayerMove : MonoBehaviour
             }
         } else {
             for(int index = 0;index < count;index++){
-                GameObject bullet = objectManager.MakeObj("BulletPlayer5");
+                GameObject bullet = objectManager.Get(20);
                 Rigidbody2D rigid = bullet.GetComponent<Rigidbody2D>();
                 Bullet bulletLogic = bullet.GetComponent<Bullet>();
                 bulletLogic.power = dmg * power;
@@ -1969,7 +2056,7 @@ public class PlayerMove : MonoBehaviour
     }
     void WeaponWindForce(float dmg, float scale, float timer)
     {
-        GameObject bullet = objectManager.MakeObj("BulletPlayer6");
+        GameObject bullet = objectManager.Get(21);
         Bullet bulletLogic = bullet.GetComponent<Bullet>();
         bulletLogic.waepon6Timer = timer;
 
@@ -1981,7 +2068,7 @@ public class PlayerMove : MonoBehaviour
     void WeaponFireBall(float dmg, float scale, int count, bool maxLevel)
     {
         if(!maxLevel){
-            GameObject bullet = objectManager.MakeObj("BulletPlayer7");
+            GameObject bullet = objectManager.Get(22);
             bullet.transform.position = transform.position;
             Bullet bulletLogic = bullet.GetComponent<Bullet>();
             Rigidbody2D rigid = bullet.GetComponent<Rigidbody2D>();
@@ -1996,7 +2083,7 @@ public class PlayerMove : MonoBehaviour
                 weaponCrazyFireCount=0;
             }else if(weaponCrazyFireCount==2){
                 for (int i = 0;i<10;i++ ){
-                    GameObject bullet = objectManager.MakeObj("BulletPlayer7");
+                    GameObject bullet = objectManager.Get(22);
                     bullet.transform.position = transform.position;
                     Bullet bulletLogic = bullet.GetComponent<Bullet>();
                     Rigidbody2D rigid = bullet.GetComponent<Rigidbody2D>();
@@ -2016,7 +2103,7 @@ public class PlayerMove : MonoBehaviour
                 weaponCrazyFireCount++;
             } else if(weaponCrazyFireCount==1) {
                 for (int i = 0;i<6;i++ ){
-                    GameObject bullet = objectManager.MakeObj("BulletPlayer7");
+                    GameObject bullet = objectManager.Get(22);
                     bullet.transform.position = transform.position;
                     Bullet bulletLogic = bullet.GetComponent<Bullet>();
                     Rigidbody2D rigid = bullet.GetComponent<Rigidbody2D>();
@@ -2036,7 +2123,7 @@ public class PlayerMove : MonoBehaviour
                 weaponCrazyFireCount++;
             } else {
                 for (int i = 0;i<3;i++ ){
-                    GameObject bullet = objectManager.MakeObj("BulletPlayer7");
+                    GameObject bullet = objectManager.Get(22);
                     bullet.transform.position = transform.position;
                     Bullet bulletLogic = bullet.GetComponent<Bullet>();
                     Rigidbody2D rigid = bullet.GetComponent<Rigidbody2D>();
@@ -2063,7 +2150,7 @@ public class PlayerMove : MonoBehaviour
             for(int index = 0;index < num;index++){
                 float ranX = Random.Range(-2.0f,2.0f);
                 float ranY = Random.Range(-1.0f,7.0f);
-                GameObject bullet8 = objectManager.MakeObj("BulletPlayer8");
+                GameObject bullet8 = objectManager.Get(23);
                 bullet8.transform.position = new Vector3(transform.position.x+ranX, transform.position.y+ranY);
                 Rigidbody2D rigid8 = bullet8.GetComponent<Rigidbody2D>();
                 Bullet bulletLogic8 = bullet8.GetComponent<Bullet>();
@@ -2075,7 +2162,7 @@ public class PlayerMove : MonoBehaviour
                 float ranY = Random.Range(-1.0f,7.0f);
                 float ranScaleX = Random.Range(1f,2f);
                 float ranScaleY = Random.Range(1.5f,2.5f);
-                GameObject bullet8 = objectManager.MakeObj("BulletPlayer8");
+                GameObject bullet8 = objectManager.Get(23);
                 bullet8.transform.localScale = new Vector3(ranScaleX,ranScaleY,0);
                 bullet8.transform.position = new Vector3(transform.position.x+ranX, transform.position.y+ranY);
                 Rigidbody2D rigid8 = bullet8.GetComponent<Rigidbody2D>();
@@ -2089,7 +2176,7 @@ public class PlayerMove : MonoBehaviour
         for(int index = 0;index < num;index++){
             float ranX = Random.Range(-2f,2f);
             float ranZ = Random.Range(-2f,2f);
-            GameObject bullet = objectManager.MakeObj("BulletPlayer10");
+            GameObject bullet = objectManager.Get(25);
             bullet.transform.position = transform.position;
             Rigidbody2D rigid = bullet.GetComponent<Rigidbody2D>();
             Bullet bulletLogic = bullet.GetComponent<Bullet>();
@@ -2105,7 +2192,7 @@ public class PlayerMove : MonoBehaviour
     }
     void WeaponPistol(float dmg, float scale)
     {
-        GameObject bullet = objectManager.MakeObj("BulletPlayer11");
+        GameObject bullet = objectManager.Get(26);
         bullet.transform.position = transform.position;
         Rigidbody2D rigid = bullet.GetComponent<Rigidbody2D>();
         Bullet bulletLogic = bullet.GetComponent<Bullet>();
@@ -2123,7 +2210,7 @@ public class PlayerMove : MonoBehaviour
     void WeaponTsunami(float dmg)
     {
         for(int i =0;i<9;i++){
-            GameObject bullet = objectManager.MakeObj("BulletPlayer13");
+            GameObject bullet = objectManager.Get(28);
             Rigidbody2D rigid = bullet.GetComponent<Rigidbody2D>();
             Bullet bulletLogic = bullet.GetComponent<Bullet>();
             bulletLogic.power = dmg * power;
@@ -2136,7 +2223,7 @@ public class PlayerMove : MonoBehaviour
     // 메테오
     void WeaponMeteo(float dmg)
     {
-        GameObject bullet = objectManager.MakeObj("BulletPlayer14");
+        GameObject bullet = objectManager.Get(29);
         bullet.transform.position = new Vector3(transform.position.x -4,transform.position.y+7,0);
         Rigidbody2D rigid = bullet.GetComponent<Rigidbody2D>();
         Bullet bulletLogic = bullet.GetComponent<Bullet>();
@@ -2148,20 +2235,20 @@ public class PlayerMove : MonoBehaviour
     void ThrowHammer(float dmg, bool maxlevel)
     {
         if(!maxlevel){
-            GameObject bullet = objectManager.MakeObj("BulletPlayer16");
+            GameObject bullet = objectManager.Get(31);
             Rigidbody2D rigid = bullet.GetComponent<Rigidbody2D>();
             Bullet bulletLogic = bullet.GetComponent<Bullet>();
             bulletLogic.power = dmg * power;
             bulletLogic.maxLevel = maxlevel;
             bulletLogic.playerCurVec = transform.position;
         } else {
-            GameObject bullet = objectManager.MakeObj("BulletPlayer16");
+            GameObject bullet = objectManager.Get(31);
             Rigidbody2D rigid = bullet.GetComponent<Rigidbody2D>();
             Bullet bulletLogic = bullet.GetComponent<Bullet>();
             bulletLogic.power = dmg * power;
             bulletLogic.playerCurVec = transform.position;
 
-            GameObject bullet1 = objectManager.MakeObj("BulletPlayer16");
+            GameObject bullet1 = objectManager.Get(31);
             Rigidbody2D rigid1 = bullet1.GetComponent<Rigidbody2D>();
             Bullet bulletLogic1 = bullet1.GetComponent<Bullet>();
             bulletLogic1.power = dmg * power;
@@ -2173,7 +2260,7 @@ public class PlayerMove : MonoBehaviour
     void MaceAttack(float dmg, float maceSpeed, bool maxlevel)
     {
         if(maxlevel){
-            GameObject bullet = objectManager.MakeObj("BulletPlayer17");
+            GameObject bullet = objectManager.Get(32);
             Rigidbody2D rigid = bullet.GetComponent<Rigidbody2D>();
             Bullet bulletLogic = bullet.GetComponent<Bullet>();
             bulletLogic.power = dmg * power;
@@ -2187,7 +2274,7 @@ public class PlayerMove : MonoBehaviour
             bullet.transform.rotation = Quaternion.Euler(0,0,degree + 90f);
             bulletLogic.playerCurVec = transform.position;
         } else {
-            GameObject bullet = objectManager.MakeObj("BulletPlayer17");
+            GameObject bullet = objectManager.Get(32);
             Rigidbody2D rigid = bullet.GetComponent<Rigidbody2D>();
             Bullet bulletLogic = bullet.GetComponent<Bullet>();
             bulletLogic.power = dmg * power;
@@ -2218,7 +2305,7 @@ public class PlayerMove : MonoBehaviour
     // 십자가 공격
     void CrossAttack(float dmg, bool maxLevel)
     {
-        GameObject bullet = objectManager.MakeObj("BulletPlayer19");
+        GameObject bullet = objectManager.Get(34);
         Bullet bulletLogic = bullet.GetComponent<Bullet>();
         bulletLogic.power = dmg * power;
         bullet.transform.position = transform.position;
@@ -2237,7 +2324,7 @@ public class PlayerMove : MonoBehaviour
     // 에너지 파동
     void EnergyForce(float dmg, bool maxLevel)
     {
-        GameObject bullet = objectManager.MakeObj("BulletPlayer21");
+        GameObject bullet = objectManager.Get(36);
         Bullet bulletLogic = bullet.GetComponent<Bullet>();
         Rigidbody2D rigid = bullet.GetComponent<Rigidbody2D>();
         bulletLogic.power = dmg * power;
@@ -2254,7 +2341,7 @@ public class PlayerMove : MonoBehaviour
     // 에너지 파동2
     void EnergyForce2(float dmg, int count, bool maxLevel)
     {
-        GameObject bullet = objectManager.MakeObj("BulletPlayer22");
+        GameObject bullet = objectManager.Get(37);
         Bullet bulletLogic = bullet.GetComponent<Bullet>();
         Rigidbody2D rigid = bullet.GetComponent<Rigidbody2D>();
         bulletLogic.power = dmg * power;
@@ -2303,7 +2390,7 @@ public class PlayerMove : MonoBehaviour
     {
         float ranX = Random.Range(-1.5f,1.5f);
         float ranY = Random.Range(-4.5f,4.5f);
-        GameObject bullet = objectManager.MakeObj("BulletPlayer23");
+        GameObject bullet = objectManager.Get(38);
         bullet.transform.position = new Vector3(transform.position.x+ranX, transform.position.y+ranY);
         Bullet bulletLogic = bullet.GetComponent<Bullet>();
         bulletLogic.power = dmg * power;
@@ -2343,7 +2430,7 @@ public class PlayerMove : MonoBehaviour
     // 활 던지기
     void BowThrow(float dmg, int count, bool maxLevel)
     {
-        GameObject bullet = objectManager.MakeObj("BulletPlayer25");
+        GameObject bullet = objectManager.Get(40);
         bullet.transform.position = transform.position;
         Rigidbody2D rigid = bullet.GetComponent<Rigidbody2D>();
         Bullet bulletLogic = bullet.GetComponent<Bullet>();
@@ -2388,7 +2475,7 @@ public class PlayerMove : MonoBehaviour
         if(skullCount < count){
             int ran = Random.Range(0,2);
             if(ran == 0){ // 스켈레톤
-                GameObject skull = objectManager.MakeObj("BulletPlayer28");
+                GameObject skull = objectManager.Get(43);
                 PlayerObj skullLogic = skull.GetComponent<PlayerObj>();
                 skullLogic.life = objLife;
                 skullLogic.maxLife = objLife;
@@ -2400,7 +2487,7 @@ public class PlayerMove : MonoBehaviour
                 skullCount++;
                 skullLogic.elementalType = "None";
             } else if(ran == 1){ // 궁수
-                GameObject bowSkull = objectManager.MakeObj("BulletPlayer28");
+                GameObject bowSkull = objectManager.Get(43);
                 Vector2 pos = new Vector2(transform.position.x+1f,transform.position.y);
                 PlayerObj bowSkullLogic = bowSkull.GetComponent<PlayerObj>();
                 bowSkullLogic.life = objLife*0.8f;
@@ -2425,7 +2512,7 @@ public class PlayerMove : MonoBehaviour
         } else {
             if(maxLevel){
                 // 가로
-                GameObject bullet = objectManager.MakeObj("BulletPlayer32");
+                GameObject bullet = objectManager.Get(47);
                 Rigidbody2D rigid = bullet.GetComponent<Rigidbody2D>();
                 Bullet bulletLogic = bullet.GetComponent<Bullet>();
                 bulletLogic.power = dmg * power;
@@ -2437,7 +2524,7 @@ public class PlayerMove : MonoBehaviour
                 rigid.AddForce(Vector2.down * bulletSpeed, ForceMode2D.Impulse);
 
                 // 세로
-                GameObject bullet1 = objectManager.MakeObj("BulletPlayer32");
+                GameObject bullet1 = objectManager.Get(47);
                 Rigidbody2D rigid1 = bullet1.GetComponent<Rigidbody2D>();
                 Bullet bulletLogic1 = bullet1.GetComponent<Bullet>();
                 bulletLogic1.power = dmg * power;
@@ -2449,7 +2536,7 @@ public class PlayerMove : MonoBehaviour
                 rigid1.AddForce(Vector2.left * bulletSpeed, ForceMode2D.Impulse);
             } else {
                 if(ran ==0){ // 세로 공격
-                    GameObject bullet = objectManager.MakeObj("BulletPlayer32");
+                    GameObject bullet = objectManager.Get(47);
                     Rigidbody2D rigid = bullet.GetComponent<Rigidbody2D>();
                     Bullet bulletLogic = bullet.GetComponent<Bullet>();
                     bulletLogic.power = dmg * power;
@@ -2460,7 +2547,7 @@ public class PlayerMove : MonoBehaviour
                     bullet.transform.rotation = Quaternion.Euler(0,0,180f);
                     rigid.AddForce(Vector2.down * bulletSpeed, ForceMode2D.Impulse);
                 } else { //가로 공격
-                    GameObject bullet = objectManager.MakeObj("BulletPlayer32");
+                    GameObject bullet = objectManager.Get(47);
                     Rigidbody2D rigid = bullet.GetComponent<Rigidbody2D>();
                     Bullet bulletLogic = bullet.GetComponent<Bullet>();
                     bulletLogic.power = dmg * power;
@@ -2479,7 +2566,7 @@ public class PlayerMove : MonoBehaviour
     {
         if(!snake){
             snake = true;
-            GameObject bullet = objectManager.MakeObj("BulletPlayer33");
+            GameObject bullet = objectManager.Get(48);
             bullet.transform.localScale = new Vector3(scale, scale, 0);
             bullet.transform.position = transform.position;
             Bullet bulletLogic = bullet.GetComponent<Bullet>();
@@ -2602,7 +2689,7 @@ public class PlayerMove : MonoBehaviour
     {
         if(!isLake){
             isLake=true;
-            GameObject bullet = objectManager.MakeObj("BulletPlayer35");
+            GameObject bullet = objectManager.Get(50);
             PlayerObj lakeLogic = bullet.GetComponent<PlayerObj>();
             lakeLogic.power = dmg * power;
             Vector2 pos = new Vector2(transform.position.x+1f,transform.position.y);
@@ -2655,69 +2742,69 @@ public class PlayerMove : MonoBehaviour
     {
         //화면 에있는 모든 적들에게 에게 데미지를 준다
         boomEffect.SetActive(true);
-        GameObject[] enemyA = objectManager.GetPool("EnemyA");
-        GameObject[] enemyB = objectManager.GetPool("EnemyB");
-        GameObject[] enemyC = objectManager.GetPool("EnemyC");
-        GameObject[] enemyD = objectManager.GetPool("EnemyD");
-        GameObject[] enemyE = objectManager.GetPool("EnemyE");
-        for(int index=0; index<enemyA.Length;index++){
-            if(objectManager.GetPool("EnemyA")[index].activeSelf){
-                Vector3 screenPoint = cam.WorldToViewportPoint(objectManager.GetPool("EnemyA")[index].transform.position);
+        for(int index=0; index<objectManager.pools[0].Count;index++){
+            if(objectManager.pools[0][index].activeSelf){
+                Vector3 screenPoint = cam.WorldToViewportPoint(objectManager.pools[0][index].transform.position);
                 bool onScreen = screenPoint.z > 0 && screenPoint.x > 0 && screenPoint.x < 1 && screenPoint.y > 0 && screenPoint.y < 1;
                 if(onScreen){
-                    EnemyMove enemyLogicA = enemyA[index].GetComponent<EnemyMove>();
+                    EnemyMove enemyLogicA = objectManager.pools[0][index].GetComponent<EnemyMove>();
                     enemyLogicA.OnHit(dmg);
                 }
             }
         }
-        for(int index=0; index<enemyB.Length;index++){
-            if(objectManager.GetPool("EnemyB")[index].activeSelf){
-                Vector3 screenPoint = cam.WorldToViewportPoint(objectManager.GetPool("EnemyB")[index].transform.position);
+        for(int index=0; index<objectManager.pools[1].Count;index++){
+            if(objectManager.pools[1][index].activeSelf){
+                Vector3 screenPoint = cam.WorldToViewportPoint(objectManager.pools[1][index].transform.position);
                 bool onScreen = screenPoint.z > 0 && screenPoint.x > 0 && screenPoint.x < 1 && screenPoint.y > 0 && screenPoint.y < 1;
                 if(onScreen){
-                    EnemyMove enemyLogicB = enemyB[index].GetComponent<EnemyMove>();
-                    enemyLogicB.OnHit(dmg);
+                    EnemyMove enemyLogicA = objectManager.pools[1][index].GetComponent<EnemyMove>();
+                    enemyLogicA.OnHit(dmg);
                 }
             }
         }
-        for(int index=0; index<enemyC.Length;index++){
-            if(objectManager.GetPool("EnemyC")[index].activeSelf){
-                Vector3 screenPoint = cam.WorldToViewportPoint(objectManager.GetPool("EnemyC")[index].transform.position);
+        for(int index=0; index<objectManager.pools[2].Count;index++){
+            if(objectManager.pools[2][index].activeSelf){
+                Vector3 screenPoint = cam.WorldToViewportPoint(objectManager.pools[2][index].transform.position);
                 bool onScreen = screenPoint.z > 0 && screenPoint.x > 0 && screenPoint.x < 1 && screenPoint.y > 0 && screenPoint.y < 1;
                 if(onScreen){
-                    EnemyMove enemyLogicC = enemyC[index].GetComponent<EnemyMove>();
-                    enemyLogicC.OnHit(dmg);
+                    EnemyMove enemyLogicA = objectManager.pools[2][index].GetComponent<EnemyMove>();
+                    enemyLogicA.OnHit(dmg);
                 }
             }
         }
-        for(int index=0; index<enemyD.Length;index++){
-            if(objectManager.GetPool("EnemyD")[index].activeSelf){
-                Vector3 screenPoint = cam.WorldToViewportPoint(objectManager.GetPool("EnemyD")[index].transform.position);
+        for(int index=0; index<objectManager.pools[3].Count;index++){
+            if(objectManager.pools[3][index].activeSelf){
+                Vector3 screenPoint = cam.WorldToViewportPoint(objectManager.pools[3][index].transform.position);
                 bool onScreen = screenPoint.z > 0 && screenPoint.x > 0 && screenPoint.x < 1 && screenPoint.y > 0 && screenPoint.y < 1;
                 if(onScreen){
-                    EnemyMove enemyLogicD = enemyD[index].GetComponent<EnemyMove>();
-                    enemyLogicD.OnHit(dmg);
+                    EnemyMove enemyLogicA = objectManager.pools[3][index].GetComponent<EnemyMove>();
+                    enemyLogicA.OnHit(dmg);
                 }
             }
         }
-        // 보스는 사라지기에 그냥 놔둔다;
-        if(objectManager.GetPool("EnemyE")[0].activeSelf){
-            Vector3 screenPoint = cam.WorldToViewportPoint(objectManager.GetPool("EnemyE")[0].transform.position);
-            bool onScreen = screenPoint.z > 0 && screenPoint.x > 0 && screenPoint.x < 1 && screenPoint.y > 0 && screenPoint.y < 1;
-            if(onScreen){
-                EnemyMove enemyLogicE = enemyE[0].GetComponent<EnemyMove>();
-                enemyLogicE.OnHit(dmg);
+        for(int index=0; index<objectManager.pools[4].Count;index++){
+            if(objectManager.pools[4][index].activeSelf){
+                Vector3 screenPoint = cam.WorldToViewportPoint(objectManager.pools[4][index].transform.position);
+                bool onScreen = screenPoint.z > 0 && screenPoint.x > 0 && screenPoint.x < 1 && screenPoint.y > 0 && screenPoint.y < 1;
+                if(onScreen){
+                    EnemyMove enemyLogicA = objectManager.pools[4][index].GetComponent<EnemyMove>();
+                    enemyLogicA.OnHit(dmg);
+                }
             }
         }
         if(!isBoom)
             return;
 
         // 모든 적군의 총알을 없앤다
-        GameObject[] bulletA = objectManager.GetPool("BulletEnemyA");
-        GameObject[] bulletB = objectManager.GetPool("BulletEnemyB");
-        for(int index=0; index<bulletA.Length;index++){
-            bulletA[index].SetActive(false);
-            bulletB[index].SetActive(false);
+        for(int index=0; index<objectManager.pools[51].Count;index++){
+            if(objectManager.pools[51][index].activeSelf){
+                objectManager.pools[51][index].SetActive(false);
+            }
+        }
+        for(int index=0; index<objectManager.pools[52].Count;index++){
+            if(objectManager.pools[52][index].activeSelf){
+                objectManager.pools[52][index].SetActive(false);
+            }
         }
     }
     void Shield()
@@ -2731,32 +2818,34 @@ public class PlayerMove : MonoBehaviour
     public void EnemyOff()
     {
         //모든 적군을 지우기
-        GameObject[] enemyA = objectManager.GetPool("EnemyA");
-        GameObject[] enemyB = objectManager.GetPool("EnemyB");
-        GameObject[] enemyC = objectManager.GetPool("EnemyC");
-        for(int index=0; index<enemyA.Length;index++){
-            if(objectManager.GetPool("EnemyA")[index].activeSelf){
-                EnemyMove enemyALogic = objectManager.GetPool("EnemyA")[index].GetComponent<EnemyMove>();
+        for(int index=0; index<objectManager.pools[0].Count;index++){
+            if(objectManager.pools[0][index].activeSelf){
+                EnemyMove enemyALogic = objectManager.pools[0][index].GetComponent<EnemyMove>();
                 enemyALogic.EnemyDead();
             }
         }
-        for(int index=0; index<enemyB.Length;index++){
-            if(objectManager.GetPool("EnemyB")[index].activeSelf){
-                EnemyMove enemyBLogic = objectManager.GetPool("EnemyB")[index].GetComponent<EnemyMove>();
-                enemyBLogic.EnemyDead();
+        for(int index=0; index<objectManager.pools[1].Count;index++){
+            if(objectManager.pools[1][index].activeSelf){
+                EnemyMove enemyALogic = objectManager.pools[1][index].GetComponent<EnemyMove>();
+                enemyALogic.EnemyDead();
             }
         }
-        for(int index=0; index<enemyC.Length;index++){
-            if(objectManager.GetPool("EnemyC")[index].activeSelf){
-                EnemyMove enemyCLogic = objectManager.GetPool("EnemyC")[index].GetComponent<EnemyMove>();
-                enemyCLogic.EnemyDead();            }
+        for(int index=0; index<objectManager.pools[2].Count;index++){
+            if(objectManager.pools[2][index].activeSelf){
+                EnemyMove enemyALogic = objectManager.pools[2][index].GetComponent<EnemyMove>();
+                enemyALogic.EnemyDead();
+            }
         }
         // 모든 적군의 총알을 없앤다
-        GameObject[] bulletA = objectManager.GetPool("BulletEnemyA");
-        GameObject[] bulletB = objectManager.GetPool("BulletEnemyB");
-        for(int index=0; index<bulletA.Length;index++){
-            bulletA[index].SetActive(false);
-            bulletB[index].SetActive(false);
+        for(int index=0; index<objectManager.pools[51].Count;index++){
+            if(objectManager.pools[51][index].activeSelf){
+                objectManager.pools[51][index].SetActive(false);
+            }
+        }
+        for(int index=0; index<objectManager.pools[52].Count;index++){
+            if(objectManager.pools[52][index].activeSelf){
+                objectManager.pools[52][index].SetActive(false);
+            }
         }
     }
     private IEnumerator InvokeRealTimeHelper (string fuctionName, float delay)
@@ -2769,4 +2858,347 @@ public class PlayerMove : MonoBehaviour
         SendMessage(fuctionName);
     }
 
+    // 상태 이상
+    //초전도 함수
+    public void isSuperconductivity(GameObject bullet, string type)
+    {
+        isLightning = false;
+        lightningOffCount = 0;
+        isIce = false;
+        iceOffCount = 0;
+        Vector3 plusPos = new Vector3(0, 0.1f, 0);
+        gameManager.StateText(transform.position, "Superconductivity");
+        PlayerDamaged(bullet, type);
+    }
+    //과부화 함수
+    public void isOverload(string type)
+    {
+        GameObject overload = objectManager.Get(58);
+        Effect overloadLogic = overload.GetComponent<Effect>();
+        overload.gameObject.transform.position = transform.position;
+        overloadLogic.power = lightningDamage + fireDamage;
+        isLightning = false;
+        lightningOffCount = 0;
+        isFire = false;
+        fireOffCount = 0;
+        Vector3 plusPos = new Vector3(0, 0.1f, 0);
+        gameManager.StateText(transform.position, "Overload");
+    }
+    //융해 함수
+    void isMelting(GameObject bullet, string type)
+    {
+        isIce = false;
+        iceOffCount = 0;
+        isFire = false;
+        fireOffCount = 0;
+        Vector3 plusPos = new Vector3(0, 0.1f, 0);
+        gameManager.StateText(transform.position, "Melting");
+        PlayerDamaged(bullet, type);
+    }
+    //빙결 함수
+    void isFreezing()
+    {
+        isIce = false;
+        iceOffCount = 0;
+        isWater = false;
+        waterOffCount = 0;
+        Vector3 plusPos = new Vector3(0, 0.1f, 0);
+        gameManager.StateText(transform.position, "Freezing");
+        freezingOffCount = 3f;
+        isFreezingOn = true;
+    }
+    void PlayerFreezing()
+    {
+        if (isFreezingOn) {
+            if (freezingOffCount <= 0) {
+                spriteRenderer.color = new Color(1, 1, 1);
+                freezStop = 1;
+                isFreezingOn = false;
+                return;
+            }
+
+            freezingOffCount -= Time.deltaTime;
+            freezStop = 0;
+            spriteRenderer.color = new Color(0.2f, 0.5f, 0.8f);
+        }
+    }
+    //증발 함수
+    void isEvaporation(GameObject bullet, string type)
+    {
+        isFire = false;
+        fireOffCount = 0;
+        isWater = false;
+        waterOffCount = 0;
+        Vector3 plusPos = new Vector3(0, 0.1f, 0);
+        gameManager.StateText(transform.position, "Evaporation");
+        PlayerDamaged(bullet, type);
+    }
+
+    //감전 함수
+    public void isElectricShock()
+    {
+        isWater = false;
+        waterOffCount = 0;
+        isLightning = false;
+        lightningOffCount = 0;
+        Vector3 plusPos = new Vector3(0, 0.1f, 0);
+        gameManager.StateText(transform.position, "ElectricShock");
+        ElectricShockOffCount = 3f;
+        ElectricShockOn = true;
+    }
+    void PlayerElectricShock()
+    {
+        if (ElectricShockOn) {
+            if (ElectricShockOffCount <= 0) {
+                spriteRenderer.color = new Color(1, 1, 1);
+                lightningStop = 1;
+                ElectricShockOn = false;
+                return;
+            }
+
+            spriteRenderer.color = new Color(0.5f, 0, 1);
+            ElectricShockOffCount -= Time.deltaTime;
+            ElectricShockDamageTextTime += Time.deltaTime;
+            lightningStop = 1;
+
+            if (ElectricShockDamageTextTime >= 0.9f) {
+                lightningStop = 0;
+            }
+            if (ElectricShockDamageTextTime >= 1) {
+                PlayerStateHit(lightningDamage, "Lightning");
+                ElectricShockDamageTextTime = 0;
+            }
+        }
+    }
+
+    //불에 붙은 경우 초당 불 데미지를 입는다.
+    void PlayerFireDamaged()
+    {
+        if (isFire) {
+            if (fireOffCount <= 0) {
+                spriteRenderer.color = new Color(1, 1, 1);
+                isFire = false;
+                return;
+            }
+
+            spriteRenderer.color = new Color(1, 0, 0);
+            fireOffCount -= Time.deltaTime;
+            fireDamageTextTime += Time.deltaTime;
+
+            if (fireDamageTextTime >= 1) {
+                PlayerStateHit(fireDamage, "Fire");
+                fireDamageTextTime = 0;
+            }
+        }
+    }
+    // 독에 맞은경우 초당 독 데미지
+    void PlayerPoisonDamaged()
+    {
+        if (isPoison) {
+            if (poisonCount <= 0) {
+                spriteRenderer.color = new Color(1, 1, 1);
+                isPoison = false;
+                return;
+            }
+
+            spriteRenderer.color = new Color(0, 0.5f, 0);
+            poisonCount -= Time.deltaTime;
+            poisonDamageTextTime += Time.deltaTime;
+
+            if (poisonDamageTextTime >= 1) {
+                PlayerStateHit(poisonDamage, "Poison");
+                poisonDamageTextTime = 0;
+            }
+        }
+    }
+    //얼음에 맞을 경우 이동속도가 느려진다.
+    void PlayerIceSlow()
+    {
+        if (isIce) {
+            if (iceOffCount <= 0) {
+                spriteRenderer.color = new Color(1, 1, 1);
+                iceSlow = 1;
+                isIce = false;
+                return;
+            }
+
+            spriteRenderer.color = new Color(0, 0, 1);
+            iceSlow = 0.5f;
+            iceOffCount -= Time.deltaTime;
+        }
+    }
+    //전기에 맞을 경우 초당 50% 데미지가 들어간다.
+    void PlayerLightning()
+    {
+        if (isLightning) {
+            if (lightningOffCount <= 0) {
+                spriteRenderer.color = new Color(1, 1, 1);
+                isLightning = false;
+                return;
+            }
+
+            spriteRenderer.color = new Color(0.5f, 1, 1);
+            lightningOffCount -= Time.deltaTime;
+            lightingDamageTextTime += Time.deltaTime;
+
+            if (lightingDamageTextTime >= 1) {
+                PlayerStateHit(lightningDamage, "Lightning");
+                lightingDamageTextTime = 0;
+            }
+        }
+    }
+    //물에 젖을 경우(색상변화)
+    void PlayerWater()
+    {
+        if (isWater) {
+            if (waterOffCount <= 0) {
+                spriteRenderer.color = new Color(1, 1, 1);
+                isWater = false;
+                return;
+            }
+
+            spriteRenderer.color = new Color(0.3f, 0.7f, 0.8f);
+            waterOffCount -= Time.deltaTime;
+        }
+    }
+    void PlayerState()
+    {
+        PlayerPoisonDamaged();
+        PlayerFireDamaged();
+        PlayerIceSlow();
+        PlayerLightning();
+        PlayerWater();
+        PlayerFreezing();
+        PlayerElectricShock();
+    }
+    public void IsFire(Bullet bullet)
+    {
+        if (isFire) {
+            fireOffCount = 3f;
+
+            if (isIce) {//융해
+                isMelting(bullet.gameObject, bullet.elementalType);
+            } else if (isLightning) {//과부화
+                lightningDamage = bullet.power;
+                isOverload(bullet.elementalType);
+            } else if (isWater) {// 증발
+                isEvaporation(bullet.gameObject, bullet.elementalType);
+            }
+            return;
+        }
+
+        //불 붙는 함수
+        isFire = true;
+        fireOffCount = 3f;
+        fireDamage = bullet.power;
+        if (isIce) {// 융해
+            isMelting(bullet.gameObject, bullet.elementalType);
+        } else if (isLightning) {//과부화
+            fireDamage = bullet.power;
+            isOverload(bullet.elementalType);
+        } else if (isWater) {// 증발
+            isEvaporation(bullet.gameObject, bullet.elementalType);
+        }
+    }
+    public void IsIce(Bullet bullet)
+    {
+        PlayerDamaged(bullet.gameObject, bullet.elementalType);
+        if (isIce) {
+            iceOffCount = 3f;
+            if (isFire) {// 융해
+                isMelting(bullet.gameObject, bullet.elementalType);
+            } else if (isLightning) {// 초전도
+                isSuperconductivity(bullet.gameObject, bullet.elementalType);
+            } else if (isWater) {// 프리즈
+                isFreezing();
+            }
+        } else {
+            // 얼음 이동속도 감소
+            isIce = true;
+            iceDamage = bullet.power;
+            iceOffCount = 3f;
+            if (isFire) {// 융해
+                isMelting(bullet.gameObject, bullet.elementalType);
+            } else if (isLightning) {//초전도
+                isSuperconductivity(bullet.gameObject, bullet.elementalType);
+            } else if (isWater) {// 프리즈
+                isFreezing();
+            }
+        }
+    }
+    public void IsLightning(Bullet bullet)
+    {
+        lightningOffCount = 3f;
+        isLightning = true;
+        lightningDamage = bullet.power;
+        PlayerDamaged(bullet.gameObject, bullet.elementalType);
+        if (isFire) { // 불이 붙었다면 과부화
+            isOverload("Overload");
+        } else if (isIce) { // 얼음이 붙었다면 초전도
+            isSuperconductivity(bullet.gameObject, "Superconductivity");
+        } else if (isWater) { // 물이 묻었다면 감전
+            isElectricShock();
+        }
+    }
+    public void IsWater(Bullet bullet)
+    {
+        PlayerDamaged(bullet.gameObject, bullet.elementalType);
+        isWater = true;
+        waterOffCount = 3f;
+        if (isIce) {
+            isFreezing();
+        } else if (isLightning) {
+            isElectricShock();
+        } else if (isFire) {
+            isEvaporation(bullet.gameObject, bullet.elementalType);
+        }
+    }
+    public void IsWind(Bullet bullet)
+    {
+        if (isFire) {//불이 붙어 있다면
+            Vector3 plusPos = new Vector3(0, 0.1f, 0);
+            gameManager.StateText(transform.position, "Diffusion");
+            PlayerDamaged(bullet.gameObject, bullet.elementalType);
+            PlayerDamaged(bullet.gameObject, "Fire");
+        } else if (isIce) {//얼음이 뭍어 있다면
+            Vector3 plusPos = new Vector3(0, 0.1f, 0);
+            gameManager.StateText(transform.position, "Diffusion");
+            PlayerDamaged(bullet.gameObject, bullet.elementalType);
+            PlayerDamaged(bullet.gameObject, "Ice");
+        } else if (isLightning) {//전기가 뭍어 있다면
+            Vector3 plusPos = new Vector3(0, 0.1f, 0);
+            gameManager.StateText(transform.position, "Diffusion");
+            PlayerDamaged(bullet.gameObject, bullet.elementalType);
+            PlayerDamaged(bullet.gameObject, "Lightning");
+        } else if (isWater) {//물이 붙어 있다면
+            Vector3 plusPos = new Vector3(0, 0.1f, 0);
+            gameManager.StateText(transform.position, "Diffusion");
+            PlayerDamaged(bullet.gameObject, bullet.elementalType);
+            PlayerDamaged(bullet.gameObject, "Water");
+        } else {
+            PlayerDamaged(bullet.gameObject, bullet.elementalType);
+        }
+    }
+    // 플레이어 스탯 초기화 함수
+    public void PlayerStateClear()
+    {
+        isPoison = false;
+        poisonCount = 0;
+        isFire = false;
+        fireOffCount = 0;
+        isIce = false;
+        iceOffCount = 0;
+        isLightning = false;
+        lightningOffCount = 0;
+        isWater = false;
+        waterOffCount = 0;
+        ElectricShockOn = false;
+        ElectricShockOffCount = 0;
+        isFreezingOn = false;
+        freezingOffCount = 0;
+        lightningStop = 1;
+        iceSlow = 1;
+        freezStop = 1;
+        spriteRenderer.color = new Color(1, 1, 1);
+    }
 }

@@ -35,9 +35,9 @@ public class Item : MonoBehaviour
             Vector2 nextPos = player.transform.position - transform.position;
             rigid.velocity = -nextPos * 5;
             Invoke("isMagOn",0.3f);
-        } else if (other.gameObject.tag=="BorderBullet"){ // 박스가 멀리 떨어지면 (박스 알람이 잘 되면 지우기!)
+        } else if (other.gameObject.tag=="BorderBullet"){ // 박스가 멀리 떨어지면
             if(type == "Box"){
-                int ran = Random.Range(0,10);
+                int ran = Random.Range(0,gameManager.spawnPoints.Length - 1);
                 gameObject.transform.position = gameManager.spawnPoints[ran].position;
             }
         }

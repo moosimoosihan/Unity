@@ -88,7 +88,6 @@ public class EnemyMove : MonoBehaviour
     public Vector3 attackVec;
     int bossAttackCount;
     Vector3 attackPos;
-    bool isAttack3;
     bool isAttack4;
 
     //소환몹 데미지
@@ -106,23 +105,22 @@ public class EnemyMove : MonoBehaviour
     }
     void OnEnable()
     {
-        wave = GameManager.instance.wave;
         gameObject.layer = 8;
         isDrop = false;
         enemyStateClear();
         switch (enemyName) {
             case "EnemyA":
-                enemyLife = 20 + (wave * 20) + ((stage - 1) * 100f);
+                enemyLife = 40 + ((stage - 1) * 100f);
                 speed = 1f;
                 power = 20 + ((stage - 1) * 10f);
                 break;
             case "EnemyB":
-                enemyLife = 70 + (wave * 30) + ((stage - 1) * 100f);
+                enemyLife = 100 + ((stage - 1) * 100f);
                 speed = 1f;
                 power = 20 + ((stage - 1) * 10f);
                 break;
             case "EnemyC":
-                enemyLife = 160 + (wave * 40) + ((stage - 1) * 100f);
+                enemyLife = 200 + ((stage - 1) * 100f);
                 speed = 1.5f;
                 power = 20 + ((stage - 1) * 10f);
                 break;
@@ -173,10 +171,6 @@ public class EnemyMove : MonoBehaviour
         if (enemyLife <= 0)
             return;
 
-        if (enemyName == "EnemyE" && isAttack3)
-        {
-            BossAttack3Move();
-        }
         if(enemyName == "EnemyE" && isAttack4)
         {
             BossAttack4Move();
@@ -201,6 +195,7 @@ public class EnemyMove : MonoBehaviour
         if (enemyName == "EnemyE") { // 보스 공격중이면 멈추기
             if (isAttack)
             {
+                rigid.velocity = Vector2.zero;
                 return;
             }
         }
@@ -212,18 +207,6 @@ public class EnemyMove : MonoBehaviour
         rigid.MovePosition(rigid.position + nextVec * iceSlow * freezStop * lightningStop); // 얼음 공격시 슬로우, 빙결, 쇼크시 멈춤
         rigid.velocity = Vector2.zero;
     }
-    void BossAttack3Move()
-    {
-        if (enemyName == "EnemyE") {
-            if (isAttack3)
-            {
-                //이동 함수(이 함수를 넣음으로서 플레이어에게 밀리지 않음)
-                Vector2 nextVec = attackPos.normalized * speed * 3 * Time.fixedDeltaTime;
-                rigid.MovePosition(rigid.position + nextVec);
-                rigid.velocity = Vector2.zero;
-            }
-        }
-    }
     void BossAttack4Move()
     {
         if(enemyName == "EnemyE")
@@ -233,11 +216,30 @@ public class EnemyMove : MonoBehaviour
                 rigid.MovePosition(rigid.position + (Vector2.down * 5 *Time.fixedDeltaTime));
                 if (transform.position.y <= attackPos.y)
                 {
-                    rigid.velocity = Vector2.zero;
                     gameObject.layer = 8;
                     isAttack4 = false;
                     isAttack = false;
                     Invoke("Check", 1f);
+                    //원 형태로 전체 공격
+                    int roundNumA = 6;
+                    int roundNum = roundNumA;
+                    for (int index = 0; index < roundNumA; index++) {
+                        GameObject bullet = objectManager.Get(56);
+                        bullet.transform.position = transform.position;
+                        bullet.transform.rotation = Quaternion.identity;
+                        Bullet bulletLogic = bullet.GetComponent<Bullet>();
+                        bulletLogic.power = power;
+
+                        Rigidbody2D rigid = bullet.GetComponent<Rigidbody2D>();
+                        Vector2 dirVec = new Vector2(Mathf.Cos(Mathf.PI * 2 * index / roundNum), Mathf.Sin(Mathf.PI * 2 * index / roundNum));
+                        rigid.AddForce(dirVec.normalized * bulletSpeed, ForceMode2D.Impulse);
+
+                        //총알 회전 로직
+                        Vector3 rotVec = Vector3.forward * 360 * index / roundNum + Vector3.forward * 90;
+                        bullet.transform.Rotate(rotVec);
+                    }
+                    rigid.velocity = Vector2.zero;
+                    bossAttackCount++;
                 }
             }
         }
@@ -269,7 +271,7 @@ public class EnemyMove : MonoBehaviour
                     OnHit(transform.position, 1, bullet.elementalType);
                 }
                 OnHit(transform.position, bullet.power, bullet.elementalType);
-                IsFrie(bullet);
+                IsFire(bullet);
 
             } else if (bullet.elementalType == "Stone") {// 바위 데미지
                 OnHit(transform.position, bullet.power, bullet.elementalType);
@@ -439,7 +441,7 @@ public class EnemyMove : MonoBehaviour
     //과부화 함수
     public void isOverload(string type)
     {
-        GameObject overload = objectManager.MakeObj("Overload");
+        GameObject overload = objectManager.Get(58);
         Effect overloadLogic = overload.GetComponent<Effect>();
         overload.gameObject.transform.position = transform.position;
         overloadLogic.power = lightningDamage + fireDamage;
@@ -648,8 +650,8 @@ public class EnemyMove : MonoBehaviour
         }
 
         if (enemyLife <= 0) {
+            enemyDead = true;
             if (enemyName == "Box") {
-                enemyDead = true;
                 gameObject.layer = 10;
                 DestroyEnemy();
             } else {
@@ -667,14 +669,18 @@ public class EnemyMove : MonoBehaviour
                 CancelInvoke("FireShot");
                 CancelInvoke("FireAround");
                 CancelInvoke("FireArc");
-                gameManager.camAnim.SetBool("IsOn", false);
+                // gameManager.camAnim.SetBool("IsOn", false);
+                gameManager.bossSquare.SetActive(false);
                 gameManager.bossHealthBar.SetActive(false);
+                gameManager.cineCam.Follow = player.transform;
                 gameManager.isBoss = false;
             }
             if (enemyName == "EnemyE") {
                 CancelInvoke("Check");
-                gameManager.camAnim.SetBool("IsOn", false);
+                // gameManager.camAnim.SetBool("IsOn", false);
+                gameManager.bossSquare.SetActive(false);
                 gameManager.bossHealthBar.SetActive(false);
+                gameManager.cineCam.Follow = player.transform;
                 gameManager.bossClear = true;
                 gameManager.StageEnd();
             }
@@ -689,53 +695,53 @@ public class EnemyMove : MonoBehaviour
         isDrop = true;
         switch (type) {
             case "EnemyA":
-                GameObject itemExp0 = objectManager.MakeObj("ItemExp0");
+                GameObject itemExp0 = objectManager.Get(5);
                 itemExp0.transform.position = transform.position;
                 break;
             case "EnemyB":
-                GameObject itemExp1 = objectManager.MakeObj("ItemExp1");
+                GameObject itemExp1 = objectManager.Get(6);
                 itemExp1.transform.position = transform.position;
                 break;
             case "EnemyC":
-                GameObject itemExp2 = objectManager.MakeObj("ItemExp2");
+                GameObject itemExp2 = objectManager.Get(7);
                 itemExp2.transform.position = transform.position;
                 break;
             case "EnemyD":
                 //체력 회복
-                GameObject itemHealth = objectManager.MakeObj("ItemHealth");
+                GameObject itemHealth = objectManager.Get(8);
                 itemHealth.transform.position = transform.position;
-                GameObject itemMag = objectManager.MakeObj("ItemMag");
+                GameObject itemMag = objectManager.Get(9);
                 itemMag.transform.position = new Vector2(transform.position.x+0.5f,transform.position.y);
                 break;
             case "EnemyE":
                 //다른 아이템을 드랍해야 함 (일단 코인 10개)
                 for (int i = 0; i < 5; i++) {
                     Vector3 ranVec = new Vector3(Random.Range(-2.0f, 2.0f) + transform.position.x, Random.Range(-2.0f, 2.0f) + transform.position.y, 0);
-                    GameObject coin1B = objectManager.MakeObj("ItemCoin1");
+                    GameObject coin1B = objectManager.Get(12);
                     coin1B.transform.position = ranVec;
-                    GameObject coin2B = objectManager.MakeObj("ItemCoin2");
+                    GameObject coin2B = objectManager.Get(13);
                     coin2B.transform.position = ranVec;
                 }
                 break;
             case "Box":
                 int ran = Random.Range(0, 10);
                 if (ran < 4) {//40% 확률로 코인0
-                    GameObject coin0 = objectManager.MakeObj("ItemCoin0");
+                    GameObject coin0 = objectManager.Get(11);
                     coin0.transform.position = transform.position;
                 } else if (ran < 6) { // 20% 확률로 코인1
-                    GameObject coin1 = objectManager.MakeObj("ItemCoin1");
+                    GameObject coin1 = objectManager.Get(12);
                     coin1.transform.position = transform.position;
                 } else if (ran < 7) { // 10%확률로 코인2
-                    GameObject coin2 = objectManager.MakeObj("ItemCoin2");
+                    GameObject coin2 = objectManager.Get(13);
                     coin2.transform.position = transform.position;
                 } else if (ran < 8) { //10% 확률로 폭탄
-                    GameObject boom = objectManager.MakeObj("ItemBoom");
+                    GameObject boom = objectManager.Get(10);
                     boom.transform.position = transform.position;
                 } else if (ran < 9) { //10% 확률로 체력
-                    GameObject health = objectManager.MakeObj("ItemHealth");
+                    GameObject health = objectManager.Get(8);
                     health.transform.position = transform.position;
                 } else if (ran < 10) { // 10% 확률로 자석
-                    GameObject mag = objectManager.MakeObj("ItemMag");
+                    GameObject mag = objectManager.Get(9);
                     mag.transform.position = transform.position;
                 }
                 break;
@@ -775,6 +781,7 @@ public class EnemyMove : MonoBehaviour
         anim.SetTrigger("Hit");
 
         if (enemyLife <= 0) {
+            enemyDead = true;
             playerLogic.enemyClearNum++;
             EnemyDead();
             ItemDrop(enemyName);
@@ -792,22 +799,25 @@ public class EnemyMove : MonoBehaviour
                 CancelInvoke("FireShot");
                 CancelInvoke("FireAround");
                 CancelInvoke("FireArc");
-                gameManager.camAnim.SetBool("IsOn", false);
+                // gameManager.camAnim.SetBool("IsOn", false);
+                gameManager.bossSquare.SetActive(false);
                 gameManager.bossHealthBar.SetActive(false);
+                gameManager.cineCam.Follow = player.transform;
                 gameManager.isBoss = false;
             }
                 //보스를 잡았을 경우
                 if (enemyName == "EnemyE") {
-                
-                gameManager.camAnim.SetBool("IsOn", false);
+                CancelInvoke("Check");
+                // gameManager.camAnim.SetBool("IsOn", false);
+                gameManager.bossSquare.SetActive(false);
                 gameManager.bossHealthBar.SetActive(false);
+                gameManager.cineCam.Follow = player.transform;
                 gameManager.StageEnd();
             }
         }
     }
     public void EnemyDead()
     {
-        enemyDead = true;
         gameObject.layer = 10;
         rigid.velocity = Vector2.zero;
         anim.SetBool("Dead", true);
@@ -822,7 +832,7 @@ public class EnemyMove : MonoBehaviour
         }
 
         if (enemyName == "EnemyB") {
-            GameObject bullet = objectManager.MakeObj("BulletEnemyA");
+            GameObject bullet = objectManager.Get(51);
             Bullet bulletLogic = bullet.GetComponent<Bullet>();
             float dmg = CriticalHit(power);
             bulletLogic.power = dmg;
@@ -832,7 +842,7 @@ public class EnemyMove : MonoBehaviour
             Vector3 dirVec = player.transform.position - transform.position;
             rigid.AddForce(dirVec.normalized * bulletSpeed, ForceMode2D.Impulse);
         } else if (enemyName == "EnemyC") {
-            GameObject bullet = objectManager.MakeObj("BulletEnemyB");
+            GameObject bullet = objectManager.Get(52);
             bullet.transform.position = transform.position;
             Rigidbody2D rigid = bullet.GetComponent<Rigidbody2D>();
             Vector3 dirVec = player.transform.position - transform.position;
@@ -888,7 +898,9 @@ public class EnemyMove : MonoBehaviour
 
         //플레이어 방향으로 샷건
         for (int index = 0; index < 5; index++) {
-            GameObject bullet = objectManager.MakeObj("BulletEnemyA");
+            GameObject bullet = objectManager.Get(51);
+            Bullet bulletLogic = bullet.GetComponent<Bullet>();
+            bulletLogic.power = power;
             bullet.transform.position = transform.position;
             Rigidbody2D rigid = bullet.GetComponent<Rigidbody2D>();
             Vector2 dirVec = player.transform.position - transform.position;
@@ -909,11 +921,13 @@ public class EnemyMove : MonoBehaviour
         if (enemyLife <= 0) return;
 
         //부채모양으로 발사
-        GameObject bullet = objectManager.MakeObj("BulletEnemyA");
+        GameObject bullet = objectManager.Get(51);
         bullet.transform.position = transform.position;
         bullet.transform.rotation = Quaternion.identity;
 
         Rigidbody2D rigid = bullet.GetComponent<Rigidbody2D>();
+        Bullet bulletLogic = bullet.GetComponent<Bullet>();
+        bulletLogic.power = power;
         Vector2 dirVec = new Vector2(Mathf.Cos(Mathf.PI * 10 * curPatternCount / maxPatternCount[patternIndex]), Mathf.Sin(Mathf.PI * 10 * curPatternCount / maxPatternCount[patternIndex]));
         rigid.AddForce(dirVec.normalized * bulletSpeed, ForceMode2D.Impulse);
 
@@ -930,11 +944,13 @@ public class EnemyMove : MonoBehaviour
         if (enemyLife <= 0) return;
 
         //원 형태로 전체 공격
-        int roundNumA = 30;
-        int roundNumB = 20;
+        int roundNumA = 10;
+        int roundNumB = 8;
         int roundNum = curPatternCount % 2 == 0 ? roundNumA : roundNumB;
         for (int index = 0; index < roundNumA; index++) {
-            GameObject bullet = objectManager.MakeObj("BulletEnemyB");
+            GameObject bullet = objectManager.Get(52);
+            Bullet bulletLogic = bullet.GetComponent<Bullet>();
+            bulletLogic.power = power;
             bullet.transform.position = transform.position;
             bullet.transform.rotation = Quaternion.identity;
 
@@ -971,7 +987,7 @@ public class EnemyMove : MonoBehaviour
             Invoke("Think", 3f);
         }
     }
-    public void IsFrie(Bullet bullet)
+    public void IsFire(Bullet bullet)
     {
         if (isFire) {
             fireOffCount = 3f;
@@ -1040,6 +1056,19 @@ public class EnemyMove : MonoBehaviour
             isElectricShock();
         }
     }
+    public void IsWater(Bullet bullet)
+    {
+        OnHit(transform.position, bullet.power, bullet.elementalType);
+        isWater = true;
+        waterOffCount = 3f;
+        if (isIce) {
+            isFreezing();
+        } else if (isLightning) {
+            isElectricShock();
+        } else if (isFire) {
+            isEvaporation(bullet.power, bullet.elementalType);
+        }
+    }
     public void IsWind(Bullet bullet)
     {
         if (isFire) {//불이 붙어 있다면
@@ -1066,24 +1095,11 @@ public class EnemyMove : MonoBehaviour
             OnHit(transform.position, bullet.power, bullet.elementalType);
         }
     }
-    public void IsWater(Bullet bullet)
-    {
-        OnHit(transform.position, bullet.power, bullet.elementalType);
-        isWater = true;
-        waterOffCount = 3f;
-        if (isIce) {
-            isFreezing();
-        } else if (isLightning) {
-            isElectricShock();
-        } else if (isFire) {
-            isEvaporation(bullet.power, bullet.elementalType);
-        }
-    }
     void StoneShield()
     {
         int ran = Random.Range(0, 100);
         if (ran < 5) {//5퍼센트 확률로 보호막 생성
-            GameObject itemShield = objectManager.MakeObj("ItemShield");
+            GameObject itemShield = objectManager.Get(14);
             Vector3 ranVec = new Vector3(Random.Range(-0.5f, 0.5f), Random.Range(-0.5f, 0.5f), 0);
             itemShield.transform.position = transform.position + ranVec;
         }
@@ -1107,19 +1123,19 @@ public class EnemyMove : MonoBehaviour
         float distance = Vector3.Distance(player.transform.position,transform.position);
         if (!isAttack)
         {
-            if (bossAttackCount == 3)
+            if (bossAttackCount >= 3)
             { // 필살 공격
                 bossAttackCount = 0;
                 isAttack = true;
-                Debug.Log("필살- 공격");
-                playerVec = player.transform.position;
-                GameObject bossEffect = gameManager.objectManager.MakeObj("BossEffect");
+                Debug.Log("필살 공격");
+                GameObject bossEffect = gameManager.objectManager.Get(63);
                 BossEffect bossEffectLogic = bossEffect.GetComponent<BossEffect>();
                 SpriteRenderer bossEffectSpriteRenderer = bossEffect.GetComponent<SpriteRenderer>();
                 bossEffectSpriteRenderer.sprite = bossEffectLogic.sprites[2]; // 원형으로 
-                bossEffect.transform.localScale = new Vector3(10, 10, 0);
+                bossEffect.transform.localScale = new Vector3(8, 8, 0);
                 bossEffect.transform.position = transform.position;
-                StartCoroutine(BeforeAttack5());
+                attackVec = transform.position;
+                StartCoroutine(BeforeAttack5(attackVec));
             }
             else
             {
@@ -1132,32 +1148,32 @@ public class EnemyMove : MonoBehaviour
                     { // 휩쓸기 공격
                         Debug.Log("휩쓸기 공격");
                         playerVec = player.transform.position;
-                        GameObject bossEffect = gameManager.objectManager.MakeObj("BossEffect");
+                        GameObject bossEffect = gameManager.objectManager.Get(63);
                         BossEffect bossEffectLogic = bossEffect.GetComponent<BossEffect>();
                         SpriteRenderer bossEffectSpriteRenderer = bossEffect.GetComponent<SpriteRenderer>();
                         bossEffectSpriteRenderer.sprite = bossEffectLogic.sprites[1]; // 삼각형으로 
                         attackPos = transform.position - playerVec;
-                        bossEffect.transform.localScale = new Vector3(4, 4, 0);
+                        bossEffect.transform.localScale = new Vector3(4f, 4f, 0);
                         attackVec = attackPos;
                         //회전 함수
                         float degree = Mathf.Atan2(transform.position.y - playerVec.y, transform.position.x - playerVec.x) * 180f / Mathf.PI;
                         bossEffect.transform.rotation = Quaternion.Euler(0, 0, degree + 270f);
                         bossEffect.transform.position = transform.position - attackPos.normalized;
-                        StartCoroutine(BeforeAttack1(attackPos));
+                        StartCoroutine(BeforeAttack1(attackVec));
                     }
                     else if (ran == 1)
                     { // 내려찍기 공격
                         Debug.Log("내려찍기 공격");
                         playerVec = player.transform.position;
-                        GameObject bossEffect = gameManager.objectManager.MakeObj("BossEffect");
+                        GameObject bossEffect = gameManager.objectManager.Get(63);
                         BossEffect bossEffectLogic = bossEffect.GetComponent<BossEffect>();
                         SpriteRenderer bossEffectSpriteRenderer = bossEffect.GetComponent<SpriteRenderer>();
                         bossEffectSpriteRenderer.sprite = bossEffectLogic.sprites[2]; // 원형으로 
                         attackPos = transform.position - playerVec;
-                        bossEffect.transform.localScale = new Vector3(4, 4, 0);
+                        bossEffect.transform.localScale = new Vector3(4f, 4f, 0);
                         attackVec = attackPos;
                         bossEffect.transform.position = transform.position - attackPos.normalized;
-                        StartCoroutine(BeforeAttack2(attackPos));
+                        StartCoroutine(BeforeAttack2(attackVec));
                     }
                 }
                 else if (distance > 1.5f)
@@ -1165,27 +1181,28 @@ public class EnemyMove : MonoBehaviour
                     isAttack = true;
                     int ran = Random.Range(0, 2);
                     if (ran == 0)
-                    { // 돌진 공격
-                        Debug.Log("돌진 공격");
-                        playerVec = player.transform.position;
-                        GameObject bossEffect = gameManager.objectManager.MakeObj("BossEffect");
-                        BossEffect bossEffectLogic = bossEffect.GetComponent<BossEffect>();
-                        SpriteRenderer bossEffectSpriteRenderer = bossEffect.GetComponent<SpriteRenderer>();
-                        bossEffectSpriteRenderer.sprite = bossEffectLogic.sprites[0]; // 사각형으로 
-                        attackPos = new Vector2(playerVec.x - transform.position.x, playerVec.y - transform.position.y);
-                        bossEffect.transform.localScale = new Vector3(2, 10, 0);
-                        attackVec = attackPos;
-                        //회전 함수
-                        float degree = Mathf.Atan2(transform.position.y - playerVec.y, transform.position.x - playerVec.x) * 180f / Mathf.PI;
-                        bossEffect.transform.rotation = Quaternion.Euler(0, 0, degree + 270f);
-                        bossEffect.transform.position = transform.position + attackPos.normalized * 2.5f;
-                        StartCoroutine(BeforeAttack3());
+                    { // 랜덤 범위 공격
+                        Debug.Log("랜덤 범위 공격");
+                            playerVec = gameManager.bossSquare.transform.position;
+                        for(int i =0;i<5;i++){
+                            Vector3 ranVec = new Vector3(Random.Range(-3f,3f)+playerVec.x,(-6f+(i*3.2f))+playerVec.y,0);
+                            GameObject bossEffect = gameManager.objectManager.Get(63);
+                            BossEffect bossEffectLogic = bossEffect.GetComponent<BossEffect>();
+                            SpriteRenderer bossEffectSpriteRenderer = bossEffect.GetComponent<SpriteRenderer>();
+                            bossEffectSpriteRenderer.sprite = bossEffectLogic.sprites[2]; // 원형으로
+                            bossEffect.transform.position = ranVec;
+                            bossEffect.transform.localScale = new Vector3(3.5f, 3.5f, 0);
+                            attackVec = ranVec;
+
+                            StartCoroutine(BeforeAttack3(attackVec));
+                        }
+                        bossAttackCount++;
                     }
                     else if (ran == 1)
                     {
                         Debug.Log("점프하여 붙기 공격");
                         playerVec = player.transform.position;
-                        GameObject bossEffect = gameManager.objectManager.MakeObj("BossEffect");
+                        GameObject bossEffect = gameManager.objectManager.Get(63);
                         BossEffect bossEffectLogic = bossEffect.GetComponent<BossEffect>();
                         SpriteRenderer bossEffectSpriteRenderer = bossEffect.GetComponent<SpriteRenderer>();
                         bossEffectSpriteRenderer.sprite = bossEffectLogic.sprites[2]; // 원형형으로 
@@ -1208,7 +1225,7 @@ public class EnemyMove : MonoBehaviour
     }
     void Attack1(Vector3 attackPos){
         Debug.Log("휩쓸기 공격 시작");
-        GameObject bossAttack = gameManager.objectManager.MakeObj("BulletEnemyC");
+        GameObject bossAttack = gameManager.objectManager.Get(53);
         Bullet bossAttackLogic = bossAttack.GetComponent<Bullet>();
         bossAttackLogic.power = power;
         bossAttack.transform.localScale = new Vector3(1f, 1f, 0);
@@ -1229,7 +1246,7 @@ public class EnemyMove : MonoBehaviour
     void Attack2(Vector3 attackPos)
     {
         Debug.Log("내려찍기 시작");
-        GameObject bossAttack = gameManager.objectManager.MakeObj("BulletEnemyD");
+        GameObject bossAttack = gameManager.objectManager.Get(54);
         Bullet bossAttackLogic = bossAttack.GetComponent<Bullet>();
         bossAttack.transform.localScale = new Vector3(1.5f, 1.5f, 0);
         bossAttackLogic.power = power;
@@ -1239,24 +1256,23 @@ public class EnemyMove : MonoBehaviour
         isAttack = false;
         Invoke("Check", 0.5f);
     }
-    IEnumerator BeforeAttack3()
+    IEnumerator BeforeAttack3(Vector3 attackVec)
     {
-        yield return new WaitForSeconds(1f);
-        Debug.Log("돌진 공격 준비");
-        Attack3();
+        yield return new WaitForSeconds(2f);
+        Debug.Log("랜덤 범위 공격 준비");
+        Attack3(attackVec);
     }
-    void Attack3()
+    void Attack3(Vector3 attackVec)
     {
-        Debug.Log("돌진 시작");
-        isAttack3 = true;
-        bossAttackCount++;
-        Invoke("Attack3End", 1.5f);
-    }
-    void Attack3End()
-    {
-        isAttack3 = false;
+        Debug.Log("랜덤 범위공격 시작");
+        GameObject bossAttack = gameManager.objectManager.Get(57);
+        Bullet bossAttackLogic = bossAttack.GetComponent<Bullet>();
+        bossAttack.transform.localScale = new Vector3(3.5f, 3.5f, 0);
+        bossAttackLogic.power = power;
+        bossAttack.transform.position = attackVec;
         isAttack = false;
-        Invoke("Check", 0.5f);
+        Invoke("Check", 3f);
+
     }
     IEnumerator BeforeAttack4()
     {
@@ -1270,26 +1286,25 @@ public class EnemyMove : MonoBehaviour
         transform.position = new Vector2(attackPos.x, attackPos.y + 3f);
         isAttack4 = true;
     }
-    IEnumerator BeforeAttack5()
+    IEnumerator BeforeAttack5(Vector3 attackVec)
     {
         yield return new WaitForSeconds(1.5f);
         Debug.Log("필살 공격 준비");
 
-        Attack5();
+        Attack5(attackVec);
     }
-    void Attack5()
+    void Attack5(Vector3 attackVec)
     {
-        GameObject bossAttack = gameManager.objectManager.MakeObj("BulletEnemyE");
+        GameObject bossAttack = gameManager.objectManager.Get(55);
         Bullet bossAttackLogic = bossAttack.GetComponent<Bullet>();
-        bossAttackLogic.power = power/2;
-        bossAttack.transform.localScale = new Vector3(1f, 1f, 0);
-        bossAttack.transform.position = transform.position;
+        bossAttackLogic.power = power/4;
+        bossAttack.transform.localScale = new Vector3(0.8f, 0.8f, 0);
+        bossAttack.transform.position = attackVec;
         Invoke("Attack5End", 7f);
     }
     void Attack5End()
     {
         isAttack = false;
-        bossAttackCount = 0;
         Check();
     }
 }
