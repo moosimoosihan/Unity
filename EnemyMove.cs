@@ -4,6 +4,8 @@ using UnityEngine;
 
 public class EnemyMove : MonoBehaviour
 {
+    AudioSource audioSource;
+    public RuntimeAnimatorController[] animCon;
     public string elementalType; // 적군 데미지 타입
     public bool isCritical; // 적군 크리티컬 여부
     public int criticalChance; // 크리티컬 확률
@@ -77,7 +79,6 @@ public class EnemyMove : MonoBehaviour
     public ObjectManager objectManager;
     public float enemyMaxLife;
     public int stage;
-    public int wave;
 
     //보스 패턴 관련 함수
     public int patternIndex;
@@ -98,6 +99,7 @@ public class EnemyMove : MonoBehaviour
     void Awake()
     {
         //초기화
+        audioSource = GetComponent<AudioSource>();
         rigid = GetComponent<Rigidbody2D>();
         spriteRenderer = GetComponent<SpriteRenderer>();
         anim = GetComponent<Animator>();
@@ -105,39 +107,60 @@ public class EnemyMove : MonoBehaviour
     }
     void OnEnable()
     {
-        gameObject.layer = 8;
-        isDrop = false;
+        if(enemyName == "Box"){
+            enemyLife = 1;
+        }
         enemyStateClear();
+    }
+    public void Init(SpawnData data)
+    {
+        anim.runtimeAnimatorController = animCon[data.spriteType];
+        speed = data.speed;
+        power = data.power;
+        elementalType = data.elementalType;
+        criticalChance = data.criticalChance;
+        criticalDamage = data.criticalDamage;
+        enemyName = data.enemyName;
+        enemyLife = data.enemyLife;
+        maxShootDelay = data.maxShootDelay;
+        bulletSpeed = data.bulletSpeed;
         switch (enemyName) {
             case "EnemyA":
-                enemyLife = 40 + ((stage - 1) * 100f);
+                transform.localScale = new Vector3(0.4f,0.4f,0);
+                enemyLife += ((stage - 1) * 100f);
                 speed = 1f;
-                power = 20 + ((stage - 1) * 10f);
+                power += ((stage - 1) * 10f);
                 break;
             case "EnemyB":
-                enemyLife = 100 + ((stage - 1) * 100f);
+                transform.localScale = new Vector3(0.4f,0.4f,0);
+                enemyLife += ((stage - 1) * 100f);
                 speed = 1f;
-                power = 20 + ((stage - 1) * 10f);
+                power += ((stage - 1) * 10f);
                 break;
             case "EnemyC":
-                enemyLife = 200 + ((stage - 1) * 100f);
+                transform.localScale = new Vector3(0.4f,0.4f,0);
+                enemyLife += ((stage - 1) * 100f);
                 speed = 1.5f;
-                power = 20 + ((stage - 1) * 10f);
+                power += ((stage - 1) * 10f);
                 break;
             case "EnemyD":
-                enemyLife = 20000 + ((stage - 1) * 5000f);
+                enemyLife += ((stage - 1) * 5000f);
                 speed = 1.5f;
-                power = 50 + ((stage - 1) * 10f);
+                power += ((stage - 1) * 10f);
+                curPatternCount = -1;
+                maxPatternCount = new int[4];
+                maxPatternCount[0] = 5;
+                maxPatternCount[1] = 49;
+                maxPatternCount[2] = 5;
+                maxPatternCount[3] = 5;
                 Invoke("Think", 5f);
                 break;
-            case "Box":
-                enemyLife = 1;
-                break;
             case "EnemyE":
-                enemyLife = 50000 + ((stage - 1) * 10000f);
+                enemyLife += ((stage - 1) * 10000f);
                 speed = 1.6f;
-                power = 80 + ((stage - 1) * 10f);
+                power += ((stage - 1) * 10f);
                 Invoke("Check", 5f);
+
                 break;
         }
         enemyMaxLife = enemyLife;
@@ -146,9 +169,9 @@ public class EnemyMove : MonoBehaviour
     {
         //보스라면 체력을 표기해라
         if ((enemyName == "EnemyE") && gameObject.activeSelf) {
-            gameManager.bossHealth.fillAmount = enemyLife / enemyMaxLife;
+            gameManager.spawner.bossHealth.fillAmount = enemyLife / enemyMaxLife;
         } else if (enemyName == "EnemyD" && gameObject.activeSelf) {
-            gameManager.bossHealth.fillAmount = enemyLife / enemyMaxLife;
+            gameManager.spawner.bossHealth.fillAmount = enemyLife / enemyMaxLife;
         }
 
         if (enemyName == "Box")
@@ -224,7 +247,7 @@ public class EnemyMove : MonoBehaviour
                     int roundNumA = 6;
                     int roundNum = roundNumA;
                     for (int index = 0; index < roundNumA; index++) {
-                        GameObject bullet = objectManager.Get(56);
+                        GameObject bullet = objectManager.Get(52);
                         bullet.transform.position = transform.position;
                         bullet.transform.rotation = Quaternion.identity;
                         Bullet bulletLogic = bullet.GetComponent<Bullet>();
@@ -357,7 +380,7 @@ public class EnemyMove : MonoBehaviour
                 transform.Translate(playerDir * 20 + new Vector3(Random.Range(-3f, 3f), Random.Range(-3f, 3f), 0));
             } else {
                 int ran = Random.Range(0, 20);
-                gameObject.transform.position = gameManager.spawnPoints[ran].position;
+                gameObject.transform.position = gameManager.spawner.spawnPoints[ran].position;
             }
         }
     }
@@ -441,7 +464,7 @@ public class EnemyMove : MonoBehaviour
     //과부화 함수
     public void isOverload(string type)
     {
-        GameObject overload = objectManager.Get(58);
+        GameObject overload = objectManager.Get(54);
         Effect overloadLogic = overload.GetComponent<Effect>();
         overload.gameObject.transform.position = transform.position;
         overloadLogic.power = lightningDamage + fireDamage;
@@ -635,6 +658,29 @@ public class EnemyMove : MonoBehaviour
         if (enemyDead)
             return;
 
+        //오디오 출력 ( 바람, 불, 전기, 물, 얼음, 독, 빛 마땅히 넣을 소스가 없어 물리와 같음 )
+        if(type == "None"){
+            audioSource.clip = gameManager.audioManager.hit0Auido;
+        } else if(type == "Stone"){
+            audioSource.clip = gameManager.audioManager.hit1Auido;
+        } else if(type == "Fire"){
+            audioSource.clip = gameManager.audioManager.hit0Auido;
+        } else if(type == "Lightning"){
+            audioSource.clip = gameManager.audioManager.hit0Auido;
+        } else if(type == "Water"){
+            audioSource.clip = gameManager.audioManager.hit0Auido;
+        } else if(type == "Ice"){
+            audioSource.clip = gameManager.audioManager.hit0Auido;
+        } else if(type == "Poison"){
+            audioSource.clip = gameManager.audioManager.hit0Auido;
+        } else if(type == "Light"){
+            audioSource.clip = gameManager.audioManager.hit0Auido;
+        } else if(type == "Wind"){
+            audioSource.clip = gameManager.audioManager.hit0Auido;
+        }
+        if(!audioSource.isPlaying){
+            gameManager.audioManager.PlayOneShotSound(audioSource, audioSource.clip, audioSource.volume);
+        }
         if (type == "Fire" || type == "None" || type == "Lightning" || type == "Stone") {
             freezingOffCount = 0;
         }
@@ -651,6 +697,8 @@ public class EnemyMove : MonoBehaviour
 
         if (enemyLife <= 0) {
             enemyDead = true;
+            audioSource.clip = gameManager.audioManager.deadAuido;
+            gameManager.audioManager.PlayOneShotSound(audioSource, audioSource.clip, audioSource.volume);
             if (enemyName == "Box") {
                 gameObject.layer = 10;
                 DestroyEnemy();
@@ -661,27 +709,27 @@ public class EnemyMove : MonoBehaviour
             ItemDrop(enemyName);
             //보스를 잡았을 경우
             if (enemyName == "EnemyD") {
-                if (!gameManager.boss1Clear) {
-                    gameManager.boss1Clear = true;
+                if (!gameManager.spawner.boss1Clear) {
+                    gameManager.spawner.boss1Clear = true;
                 } else {
-                    gameManager.boss2Clear = true;
+                    gameManager.spawner.boss2Clear = true;
                 }
                 CancelInvoke("FireShot");
                 CancelInvoke("FireAround");
                 CancelInvoke("FireArc");
                 // gameManager.camAnim.SetBool("IsOn", false);
-                gameManager.bossSquare.SetActive(false);
-                gameManager.bossHealthBar.SetActive(false);
+                gameManager.spawner.bossSquare.SetActive(false);
+                gameManager.spawner.bossHealthBar.SetActive(false);
                 gameManager.cineCam.Follow = player.transform;
-                gameManager.isBoss = false;
+                gameManager.spawner.isBoss = false;
             }
             if (enemyName == "EnemyE") {
                 CancelInvoke("Check");
                 // gameManager.camAnim.SetBool("IsOn", false);
-                gameManager.bossSquare.SetActive(false);
-                gameManager.bossHealthBar.SetActive(false);
+                gameManager.spawner.bossSquare.SetActive(false);
+                gameManager.spawner.bossHealthBar.SetActive(false);
                 gameManager.cineCam.Follow = player.transform;
-                gameManager.bossClear = true;
+                gameManager.spawner.bossClear = true;
                 gameManager.StageEnd();
             }
         }
@@ -695,53 +743,53 @@ public class EnemyMove : MonoBehaviour
         isDrop = true;
         switch (type) {
             case "EnemyA":
-                GameObject itemExp0 = objectManager.Get(5);
+                GameObject itemExp0 = objectManager.Get(1);
                 itemExp0.transform.position = transform.position;
                 break;
             case "EnemyB":
-                GameObject itemExp1 = objectManager.Get(6);
+                GameObject itemExp1 = objectManager.Get(2);
                 itemExp1.transform.position = transform.position;
                 break;
             case "EnemyC":
-                GameObject itemExp2 = objectManager.Get(7);
+                GameObject itemExp2 = objectManager.Get(3);
                 itemExp2.transform.position = transform.position;
                 break;
             case "EnemyD":
                 //체력 회복
-                GameObject itemHealth = objectManager.Get(8);
+                GameObject itemHealth = objectManager.Get(4);
                 itemHealth.transform.position = transform.position;
-                GameObject itemMag = objectManager.Get(9);
+                GameObject itemMag = objectManager.Get(5);
                 itemMag.transform.position = new Vector2(transform.position.x+0.5f,transform.position.y);
                 break;
             case "EnemyE":
                 //다른 아이템을 드랍해야 함 (일단 코인 10개)
                 for (int i = 0; i < 5; i++) {
                     Vector3 ranVec = new Vector3(Random.Range(-2.0f, 2.0f) + transform.position.x, Random.Range(-2.0f, 2.0f) + transform.position.y, 0);
-                    GameObject coin1B = objectManager.Get(12);
+                    GameObject coin1B = objectManager.Get(8);
                     coin1B.transform.position = ranVec;
-                    GameObject coin2B = objectManager.Get(13);
+                    GameObject coin2B = objectManager.Get(9);
                     coin2B.transform.position = ranVec;
                 }
                 break;
             case "Box":
                 int ran = Random.Range(0, 10);
                 if (ran < 4) {//40% 확률로 코인0
-                    GameObject coin0 = objectManager.Get(11);
+                    GameObject coin0 = objectManager.Get(7);
                     coin0.transform.position = transform.position;
                 } else if (ran < 6) { // 20% 확률로 코인1
-                    GameObject coin1 = objectManager.Get(12);
+                    GameObject coin1 = objectManager.Get(8);
                     coin1.transform.position = transform.position;
                 } else if (ran < 7) { // 10%확률로 코인2
-                    GameObject coin2 = objectManager.Get(13);
+                    GameObject coin2 = objectManager.Get(9);
                     coin2.transform.position = transform.position;
                 } else if (ran < 8) { //10% 확률로 폭탄
-                    GameObject boom = objectManager.Get(10);
+                    GameObject boom = objectManager.Get(6);
                     boom.transform.position = transform.position;
                 } else if (ran < 9) { //10% 확률로 체력
-                    GameObject health = objectManager.Get(8);
+                    GameObject health = objectManager.Get(4);
                     health.transform.position = transform.position;
                 } else if (ran < 10) { // 10% 확률로 자석
-                    GameObject mag = objectManager.Get(9);
+                    GameObject mag = objectManager.Get(5);
                     mag.transform.position = transform.position;
                 }
                 break;
@@ -751,6 +799,8 @@ public class EnemyMove : MonoBehaviour
     //적군 스탯 초기화 함수
     void enemyStateClear()
     {
+        gameObject.layer = 8;
+        isDrop = false;
         enemyDead = false;
         isPoison = false;
         poisonCount = 0;
@@ -788,29 +838,30 @@ public class EnemyMove : MonoBehaviour
             //보스를 잡았을 경우
             if (enemyName == "EnemyD")
             {
-                if (!gameManager.boss1Clear)
+                if (!gameManager.spawner.boss1Clear)
                 {
-                    gameManager.boss1Clear = true;
+                    gameManager.spawner.boss1Clear = true;
                 }
                 else
                 {
-                    gameManager.boss2Clear = true;
+                    gameManager.spawner.boss2Clear = true;
                 }
                 CancelInvoke("FireShot");
                 CancelInvoke("FireAround");
                 CancelInvoke("FireArc");
                 // gameManager.camAnim.SetBool("IsOn", false);
-                gameManager.bossSquare.SetActive(false);
-                gameManager.bossHealthBar.SetActive(false);
+                gameManager.spawner.bossSquare.SetActive(false);
+                gameManager.spawner.bossHealthBar.SetActive(false);
                 gameManager.cineCam.Follow = player.transform;
-                gameManager.isBoss = false;
+                gameManager.spawner.isBoss = false;
+                transform.localScale = new Vector3(1,1,0);
             }
                 //보스를 잡았을 경우
                 if (enemyName == "EnemyE") {
                 CancelInvoke("Check");
                 // gameManager.camAnim.SetBool("IsOn", false);
-                gameManager.bossSquare.SetActive(false);
-                gameManager.bossHealthBar.SetActive(false);
+                gameManager.spawner.bossSquare.SetActive(false);
+                gameManager.spawner.bossHealthBar.SetActive(false);
                 gameManager.cineCam.Follow = player.transform;
                 gameManager.StageEnd();
             }
@@ -832,7 +883,7 @@ public class EnemyMove : MonoBehaviour
         }
 
         if (enemyName == "EnemyB") {
-            GameObject bullet = objectManager.Get(51);
+            GameObject bullet = objectManager.Get(47);
             Bullet bulletLogic = bullet.GetComponent<Bullet>();
             float dmg = CriticalHit(power);
             bulletLogic.power = dmg;
@@ -842,7 +893,7 @@ public class EnemyMove : MonoBehaviour
             Vector3 dirVec = player.transform.position - transform.position;
             rigid.AddForce(dirVec.normalized * bulletSpeed, ForceMode2D.Impulse);
         } else if (enemyName == "EnemyC") {
-            GameObject bullet = objectManager.Get(52);
+            GameObject bullet = objectManager.Get(48);
             bullet.transform.position = transform.position;
             Rigidbody2D rigid = bullet.GetComponent<Rigidbody2D>();
             Vector3 dirVec = player.transform.position - transform.position;
@@ -898,7 +949,7 @@ public class EnemyMove : MonoBehaviour
 
         //플레이어 방향으로 샷건
         for (int index = 0; index < 5; index++) {
-            GameObject bullet = objectManager.Get(51);
+            GameObject bullet = objectManager.Get(47);
             Bullet bulletLogic = bullet.GetComponent<Bullet>();
             bulletLogic.power = power;
             bullet.transform.position = transform.position;
@@ -921,7 +972,7 @@ public class EnemyMove : MonoBehaviour
         if (enemyLife <= 0) return;
 
         //부채모양으로 발사
-        GameObject bullet = objectManager.Get(51);
+        GameObject bullet = objectManager.Get(47);
         bullet.transform.position = transform.position;
         bullet.transform.rotation = Quaternion.identity;
 
@@ -948,7 +999,7 @@ public class EnemyMove : MonoBehaviour
         int roundNumB = 8;
         int roundNum = curPatternCount % 2 == 0 ? roundNumA : roundNumB;
         for (int index = 0; index < roundNumA; index++) {
-            GameObject bullet = objectManager.Get(52);
+            GameObject bullet = objectManager.Get(48);
             Bullet bulletLogic = bullet.GetComponent<Bullet>();
             bulletLogic.power = power;
             bullet.transform.position = transform.position;
@@ -1099,7 +1150,7 @@ public class EnemyMove : MonoBehaviour
     {
         int ran = Random.Range(0, 100);
         if (ran < 5) {//5퍼센트 확률로 보호막 생성
-            GameObject itemShield = objectManager.Get(14);
+            GameObject itemShield = objectManager.Get(10);
             Vector3 ranVec = new Vector3(Random.Range(-0.5f, 0.5f), Random.Range(-0.5f, 0.5f), 0);
             itemShield.transform.position = transform.position + ranVec;
         }
@@ -1128,7 +1179,7 @@ public class EnemyMove : MonoBehaviour
                 bossAttackCount = 0;
                 isAttack = true;
                 Debug.Log("필살 공격");
-                GameObject bossEffect = gameManager.objectManager.Get(63);
+                GameObject bossEffect = gameManager.objectManager.Get(59);
                 BossEffect bossEffectLogic = bossEffect.GetComponent<BossEffect>();
                 SpriteRenderer bossEffectSpriteRenderer = bossEffect.GetComponent<SpriteRenderer>();
                 bossEffectSpriteRenderer.sprite = bossEffectLogic.sprites[2]; // 원형으로 
@@ -1148,7 +1199,7 @@ public class EnemyMove : MonoBehaviour
                     { // 휩쓸기 공격
                         Debug.Log("휩쓸기 공격");
                         playerVec = player.transform.position;
-                        GameObject bossEffect = gameManager.objectManager.Get(63);
+                        GameObject bossEffect = gameManager.objectManager.Get(59);
                         BossEffect bossEffectLogic = bossEffect.GetComponent<BossEffect>();
                         SpriteRenderer bossEffectSpriteRenderer = bossEffect.GetComponent<SpriteRenderer>();
                         bossEffectSpriteRenderer.sprite = bossEffectLogic.sprites[1]; // 삼각형으로 
@@ -1165,7 +1216,7 @@ public class EnemyMove : MonoBehaviour
                     { // 내려찍기 공격
                         Debug.Log("내려찍기 공격");
                         playerVec = player.transform.position;
-                        GameObject bossEffect = gameManager.objectManager.Get(63);
+                        GameObject bossEffect = gameManager.objectManager.Get(59);
                         BossEffect bossEffectLogic = bossEffect.GetComponent<BossEffect>();
                         SpriteRenderer bossEffectSpriteRenderer = bossEffect.GetComponent<SpriteRenderer>();
                         bossEffectSpriteRenderer.sprite = bossEffectLogic.sprites[2]; // 원형으로 
@@ -1183,10 +1234,10 @@ public class EnemyMove : MonoBehaviour
                     if (ran == 0)
                     { // 랜덤 범위 공격
                         Debug.Log("랜덤 범위 공격");
-                            playerVec = gameManager.bossSquare.transform.position;
+                            playerVec = gameManager.spawner.bossSquare.transform.position;
                         for(int i =0;i<5;i++){
                             Vector3 ranVec = new Vector3(Random.Range(-3f,3f)+playerVec.x,(-6f+(i*3.2f))+playerVec.y,0);
-                            GameObject bossEffect = gameManager.objectManager.Get(63);
+                            GameObject bossEffect = gameManager.objectManager.Get(59);
                             BossEffect bossEffectLogic = bossEffect.GetComponent<BossEffect>();
                             SpriteRenderer bossEffectSpriteRenderer = bossEffect.GetComponent<SpriteRenderer>();
                             bossEffectSpriteRenderer.sprite = bossEffectLogic.sprites[2]; // 원형으로
@@ -1202,7 +1253,7 @@ public class EnemyMove : MonoBehaviour
                     {
                         Debug.Log("점프하여 붙기 공격");
                         playerVec = player.transform.position;
-                        GameObject bossEffect = gameManager.objectManager.Get(63);
+                        GameObject bossEffect = gameManager.objectManager.Get(59);
                         BossEffect bossEffectLogic = bossEffect.GetComponent<BossEffect>();
                         SpriteRenderer bossEffectSpriteRenderer = bossEffect.GetComponent<SpriteRenderer>();
                         bossEffectSpriteRenderer.sprite = bossEffectLogic.sprites[2]; // 원형형으로 
@@ -1225,7 +1276,7 @@ public class EnemyMove : MonoBehaviour
     }
     void Attack1(Vector3 attackPos){
         Debug.Log("휩쓸기 공격 시작");
-        GameObject bossAttack = gameManager.objectManager.Get(53);
+        GameObject bossAttack = gameManager.objectManager.Get(49);
         Bullet bossAttackLogic = bossAttack.GetComponent<Bullet>();
         bossAttackLogic.power = power;
         bossAttack.transform.localScale = new Vector3(1f, 1f, 0);
@@ -1246,7 +1297,7 @@ public class EnemyMove : MonoBehaviour
     void Attack2(Vector3 attackPos)
     {
         Debug.Log("내려찍기 시작");
-        GameObject bossAttack = gameManager.objectManager.Get(54);
+        GameObject bossAttack = gameManager.objectManager.Get(50);
         Bullet bossAttackLogic = bossAttack.GetComponent<Bullet>();
         bossAttack.transform.localScale = new Vector3(1.5f, 1.5f, 0);
         bossAttackLogic.power = power;
@@ -1265,7 +1316,7 @@ public class EnemyMove : MonoBehaviour
     void Attack3(Vector3 attackVec)
     {
         Debug.Log("랜덤 범위공격 시작");
-        GameObject bossAttack = gameManager.objectManager.Get(57);
+        GameObject bossAttack = gameManager.objectManager.Get(53);
         Bullet bossAttackLogic = bossAttack.GetComponent<Bullet>();
         bossAttack.transform.localScale = new Vector3(3.5f, 3.5f, 0);
         bossAttackLogic.power = power;
@@ -1295,7 +1346,7 @@ public class EnemyMove : MonoBehaviour
     }
     void Attack5(Vector3 attackVec)
     {
-        GameObject bossAttack = gameManager.objectManager.Get(55);
+        GameObject bossAttack = gameManager.objectManager.Get(51);
         Bullet bossAttackLogic = bossAttack.GetComponent<Bullet>();
         bossAttackLogic.power = power/4;
         bossAttack.transform.localScale = new Vector3(0.8f, 0.8f, 0);

@@ -155,8 +155,37 @@ public class PlayerMove : MonoBehaviour
     //맞은 총알
     Bullet bullet;
 
+    // 스탯 레벨
+    int stateLevelAtttack;
+    int stateLevelLife;
+    int stateLevelSpeed;
+    public int plusPower;
+
+    //오디오 함수
+    AudioSource audioSource;
+
     void Start()
     {
+        if(PlayerPrefs.HasKey("StateLevelAtttack")){
+            stateLevelAtttack = PlayerPrefs.GetInt("StateLevelAtttack");
+            plusPower += stateLevelAtttack * 10;
+        } else {
+            stateLevelAtttack = 0;
+            plusPower = 0;
+        }
+        if(PlayerPrefs.HasKey("StateLevelLife")){
+            stateLevelLife = PlayerPrefs.GetInt("StateLevelLife");
+            life += stateLevelLife * 50;
+        } else {
+            stateLevelLife = 0;
+        }
+        if(PlayerPrefs.HasKey("StateLevelSpeed")){
+            stateLevelSpeed = PlayerPrefs.GetInt("StateLevelSpeed");
+            speed += stateLevelSpeed * 0.1f;
+        } else {
+            stateLevelSpeed = 0;
+        }
+
         //모든 무기 레벨을 0으로 초기화
         for(int i=0;i<weaponLevel.Length;i++){
             weaponLevel[i] = 0;
@@ -191,6 +220,7 @@ public class PlayerMove : MonoBehaviour
     void Awake()
     {
         //초기화
+        audioSource = GetComponent<AudioSource>();
         rigid = GetComponent<Rigidbody2D>();
         anim = GetComponent<Animator>();
         spriteRenderer = GetComponent<SpriteRenderer>();
@@ -345,6 +375,10 @@ public class PlayerMove : MonoBehaviour
     //플레이어 데미지
     public void PlayerDamaged(GameObject target, string type)
     {
+        audioSource.clip = gameManager.audioManager.hit0Auido;
+        if(!audioSource.isPlaying){
+            gameManager.audioManager.PlayOneShotSound(audioSource, audioSource.clip, 1);
+        }
         if(type=="Enemy"){
             //해당 적군을 찾아서 해당 적군의 데미지가 들어가라
             //맞은 데미지 출력
@@ -442,7 +476,6 @@ public class PlayerMove : MonoBehaviour
             } else {
                 PlayerDamaged(other.gameObject, "Bullet");
             }
-            
         } else if(other.gameObject.tag == "Item"){
             Item item = other.gameObject.GetComponent<Item>();
             switch(item.type){
@@ -452,20 +485,20 @@ public class PlayerMove : MonoBehaviour
                 break;
                 //자석
                 case "Mag":
-                    List<GameObject> itemExp0 = objectManager.pools[5];
+                    List<GameObject> itemExp0 = objectManager.pools[1];
                     for(int i=0;i<itemExp0.Count;i++){
                         Item itemExp0Logic = itemExp0[i].GetComponent<Item>();
-                        itemExp0Logic.isMagnetOn = true;
+                        itemExp0Logic.isMagOn();
                     }
-                    List<GameObject> itemExp1 = objectManager.pools[6];
+                    List<GameObject> itemExp1 = objectManager.pools[2];
                     for(int i=0;i<itemExp1.Count;i++){
                         Item itemExp1Logic = itemExp1[i].GetComponent<Item>();
-                        itemExp1Logic.isMagnetOn = true;
+                        itemExp1Logic.isMagOn();
                     }
-                    List<GameObject> itemExp2 = objectManager.pools[7];
+                    List<GameObject> itemExp2 = objectManager.pools[3];
                     for(int i=0;i<itemExp2.Count;i++){
                         Item itemExp2Logic = itemExp2[i].GetComponent<Item>();
-                        itemExp2Logic.isMagnetOn = true;
+                        itemExp2Logic.isMagOn();
                     }
                 break;
                 //경험치 10
@@ -482,15 +515,15 @@ public class PlayerMove : MonoBehaviour
                 break;
                 //동전0
                 case "Coin0":
-                    gold += 10;
+                    gold += 7 + (gameManager.stage*3);
                 break;
                 //동전1
                 case "Coin1":
-                    gold += 50;
+                    gold += 35 + (gameManager.stage*15);
                 break;
                 //동전2
                 case "Coin2":
-                    gold += 100;
+                    gold += 70 + (gameManager.stage*30);
                 break;
 
                 //폭탄 아이템
@@ -699,6 +732,10 @@ public class PlayerMove : MonoBehaviour
                 break;
                 case 3:
                     if(weapon2Count<=0){
+                        if(weapon2LV[0].activeSelf){
+                            weapon2LV[0].SetActive(false);
+                            weapon2LV[1].SetActive(false);
+                        }
                         if(weapon2LV[2].activeSelf){
                             weapon2LV[2].SetActive(false);
                             weapon2LV[3].SetActive(false);
@@ -717,6 +754,15 @@ public class PlayerMove : MonoBehaviour
                 break;
                 case 4:
                     if(weapon2Count<=0){
+                        if(weapon2LV[0].activeSelf){
+                            weapon2LV[0].SetActive(false);
+                            weapon2LV[1].SetActive(false);
+                        }
+                        if(weapon2LV[2].activeSelf){
+                            weapon2LV[2].SetActive(false);
+                            weapon2LV[3].SetActive(false);
+                            weapon2LV[4].SetActive(false);
+                        }
                         if(weapon2LV[5].activeSelf){
                             weapon2LV[5].SetActive(false);
                             weapon2LV[6].SetActive(false);
@@ -737,6 +783,21 @@ public class PlayerMove : MonoBehaviour
                 break;
                 case 5:
                     if(weapon2Count<=0){
+                        if(weapon2LV[0].activeSelf){
+                            weapon2LV[0].SetActive(false);
+                            weapon2LV[1].SetActive(false);
+                        }
+                        if(weapon2LV[2].activeSelf){
+                            weapon2LV[2].SetActive(false);
+                            weapon2LV[3].SetActive(false);
+                            weapon2LV[4].SetActive(false);
+                        }
+                        if(weapon2LV[5].activeSelf){
+                            weapon2LV[5].SetActive(false);
+                            weapon2LV[6].SetActive(false);
+                            weapon2LV[7].SetActive(false);
+                            weapon2LV[8].SetActive(false);
+                        }
                         if(weapon2LV[9].activeSelf){
                             weapon2LV[9].SetActive(false);
                             weapon2LV[10].SetActive(false);
@@ -758,25 +819,43 @@ public class PlayerMove : MonoBehaviour
                     }
                 break;
                 case 6:
-                    if(weapon2Count<=0){
-                        if(weapon2LV[9].activeSelf){
-                            weapon2LV[9].SetActive(false);
-                            weapon2LV[10].SetActive(false);
-                            weapon2LV[11].SetActive(false);
-                            weapon2LV[12].SetActive(false);
-                            weapon2LV[13].SetActive(false);
-                        }
-                        if(!weapon2LV[14].activeSelf){
-                            weapon2LV[14].SetActive(true);
-                            weapon2LV[15].SetActive(true);
-                            weapon2LV[16].SetActive(true);
-                            weapon2LV[17].SetActive(true);
-                            weapon2LV[18].SetActive(true);
-                            weapon2LV[19].SetActive(true);
-                            weapon2Count = 6;
-                        }
-                    } else {
-                        weapon2Count--;
+                    if(weapon2LV[0].activeSelf){
+                        weapon2LV[0].SetActive(false);
+                        weapon2LV[1].SetActive(false);
+                    }
+                    if(weapon2LV[2].activeSelf){
+                        weapon2LV[2].SetActive(false);
+                        weapon2LV[3].SetActive(false);
+                        weapon2LV[4].SetActive(false);
+                    }
+                    if(weapon2LV[5].activeSelf){
+                        weapon2LV[5].SetActive(false);
+                        weapon2LV[6].SetActive(false);
+                        weapon2LV[7].SetActive(false);
+                        weapon2LV[8].SetActive(false);
+                    }
+                    if(weapon2LV[9].activeSelf){
+                        weapon2LV[9].SetActive(false);
+                        weapon2LV[10].SetActive(false);
+                        weapon2LV[11].SetActive(false);
+                        weapon2LV[12].SetActive(false);
+                        weapon2LV[13].SetActive(false);
+                    }
+                    if(weapon2LV[9].activeSelf){
+                        weapon2LV[9].SetActive(false);
+                        weapon2LV[10].SetActive(false);
+                        weapon2LV[11].SetActive(false);
+                        weapon2LV[12].SetActive(false);
+                        weapon2LV[13].SetActive(false);
+                    }
+                    if(!weapon2LV[14].activeSelf){
+                        weapon2LV[14].SetActive(true);
+                        weapon2LV[15].SetActive(true);
+                        weapon2LV[16].SetActive(true);
+                        weapon2LV[17].SetActive(true);
+                        weapon2LV[18].SetActive(true);
+                        weapon2LV[19].SetActive(true);
+
                     }
                     if(weaponMeteoCount<=0){
                         WeaponMeteo(1000);
@@ -1941,11 +2020,11 @@ public class PlayerMove : MonoBehaviour
         for (int i=0;i<num;i++){
             float ranX = Random.Range(-2f,2f);
             float ranZ = Random.Range(-2f,2f);
-            GameObject bullet = objectManager.Get(15);
+            GameObject bullet = objectManager.Get(11);
             bullet.transform.position = transform.position;
             Rigidbody2D rigid = bullet.GetComponent<Rigidbody2D>();
             Bullet bulletLogic = bullet.GetComponent<Bullet>();
-            bulletLogic.power = dmg * power;
+            bulletLogic.power = (dmg + plusPower) * power;
             bulletLogic.matchCount += count;
 
             //회전 함수
@@ -1955,11 +2034,11 @@ public class PlayerMove : MonoBehaviour
     }
     void WeaponTrident(float dmg, float scale, int count,bool maxLevel)
     {
-        GameObject bullet = objectManager.Get(16);
+        GameObject bullet = objectManager.Get(12);
         Bullet bulletLogic = bullet.GetComponent<Bullet>();
         bullet.transform.position = transform.position;
         Rigidbody2D rigid = bullet.GetComponent<Rigidbody2D>();
-        bulletLogic.power = dmg * power;
+        bulletLogic.power = (dmg + plusPower) * power;
         bulletLogic.matchCount += count;
 
         //회전 함수
@@ -1970,11 +2049,11 @@ public class PlayerMove : MonoBehaviour
         rigid.AddForce(dirVec.normalized * bulletSpeed, ForceMode2D.Impulse);
         if(maxLevel){
             //뒤
-            GameObject bullet2 = objectManager.Get(16);
+            GameObject bullet2 = objectManager.Get(12);
             Bullet bulletLogic2 = bullet2.GetComponent<Bullet>();
             bullet2.transform.position = transform.position;
             Rigidbody2D rigid2 = bullet2.GetComponent<Rigidbody2D>();
-            bulletLogic2.power = dmg * power;
+            bulletLogic2.power = (dmg + plusPower) * power;
 
             //회전 함수
             float degree2 = Mathf.Atan2(transform.position.y+targetImage.transform.position.y,transform.position.x+targetImage.transform.position.x)*180f/Mathf.PI;
@@ -1986,11 +2065,11 @@ public class PlayerMove : MonoBehaviour
     }
     void WeaponIceSpear(float dmg, float scale, int count, bool maxLevel)
     {
-        GameObject bullet = objectManager.Get(18);
+        GameObject bullet = objectManager.Get(14);
         Bullet bulletLogic = bullet.GetComponent<Bullet>();
         bullet.transform.position = transform.position;
         Rigidbody2D rigid = bullet.GetComponent<Rigidbody2D>();
-        bulletLogic.power = dmg * power;
+        bulletLogic.power = (dmg + plusPower) * power;
         bulletLogic.maxLevel = maxLevel;
         bulletLogic.matchCount += count;
         
@@ -2004,12 +2083,12 @@ public class PlayerMove : MonoBehaviour
     }
     void WeaponMachineGun(float dmg)
     {
-        GameObject bullet = objectManager.Get(19);
+        GameObject bullet = objectManager.Get(15);
         Vector3 ranVec = new Vector3(Random.Range(-0.2f,0.3f),Random.Range(-0.2f,0.3f),0);
         bullet.transform.position = transform.position + ranVec;
         Rigidbody2D rigid = bullet.GetComponent<Rigidbody2D>();
         Bullet bulletLogic = bullet.GetComponent<Bullet>();
-        bulletLogic.power = dmg * power;
+        bulletLogic.power = (dmg + plusPower) * power;
 
         //회전 함수
         float degree = Mathf.Atan2(transform.position.y-targetImage.transform.position.y,transform.position.x-targetImage.transform.position.x)*180f/Mathf.PI;
@@ -2023,11 +2102,11 @@ public class PlayerMove : MonoBehaviour
     {
         if(!maxLevel){
             for(int index = 0;index < count;index++){
-                GameObject bullet = objectManager.Get(20);
+                GameObject bullet = objectManager.Get(16);
                 bullet.transform.position = transform.position;
                 Rigidbody2D rigid = bullet.GetComponent<Rigidbody2D>();
                 Bullet bulletLogic = bullet.GetComponent<Bullet>();
-                bulletLogic.power = dmg * power;
+                bulletLogic.power = (dmg + plusPower) * power;
                 Vector3 ranVec = new Vector3(Random.Range(-0.2f,0.3f)*count,Random.Range(-0.2f,0.3f)*count,0);
 
                 //회전 함수
@@ -2039,10 +2118,10 @@ public class PlayerMove : MonoBehaviour
             }
         } else {
             for(int index = 0;index < count;index++){
-                GameObject bullet = objectManager.Get(20);
+                GameObject bullet = objectManager.Get(16);
                 Rigidbody2D rigid = bullet.GetComponent<Rigidbody2D>();
                 Bullet bulletLogic = bullet.GetComponent<Bullet>();
-                bulletLogic.power = dmg * power;
+                bulletLogic.power = (dmg + plusPower) * power;
                 bullet.transform.position = transform.position;
                 bullet.transform.rotation = Quaternion.identity;
                 Vector2 dirVec = new Vector2(Mathf.Cos(Mathf.PI * 2 * index / count), Mathf. Sin(Mathf.PI * 2 * index / count));
@@ -2056,11 +2135,11 @@ public class PlayerMove : MonoBehaviour
     }
     void WeaponWindForce(float dmg, float scale, float timer)
     {
-        GameObject bullet = objectManager.Get(21);
+        GameObject bullet = objectManager.Get(17);
         Bullet bulletLogic = bullet.GetComponent<Bullet>();
         bulletLogic.waepon6Timer = timer;
 
-        bulletLogic.power = dmg * power;
+        bulletLogic.power = (dmg + plusPower) * power;
         bullet.transform.localScale = new Vector3(scale,scale,0);
         bullet.transform.position = transform.position;
         weapon6Count = 0;
@@ -2068,12 +2147,12 @@ public class PlayerMove : MonoBehaviour
     void WeaponFireBall(float dmg, float scale, int count, bool maxLevel)
     {
         if(!maxLevel){
-            GameObject bullet = objectManager.Get(22);
+            GameObject bullet = objectManager.Get(18);
             bullet.transform.position = transform.position;
             Bullet bulletLogic = bullet.GetComponent<Bullet>();
             Rigidbody2D rigid = bullet.GetComponent<Rigidbody2D>();
 
-            bulletLogic.power = dmg * power;
+            bulletLogic.power = (dmg + plusPower) * power;
             bullet.transform.localScale = new Vector3(scale,scale,0);
             Vector3 dirVec = targetImage.transform.position - transform.position;
             rigid.AddForce(dirVec.normalized * bulletSpeed/3, ForceMode2D.Impulse);
@@ -2081,15 +2160,15 @@ public class PlayerMove : MonoBehaviour
         } else {
             if(weaponCrazyFireCount>=3){
                 weaponCrazyFireCount=0;
-            }else if(weaponCrazyFireCount==2){
+            } else if(weaponCrazyFireCount==2) {
                 for (int i = 0;i<10;i++ ){
-                    GameObject bullet = objectManager.Get(22);
+                    GameObject bullet = objectManager.Get(18);
                     bullet.transform.position = transform.position;
                     Bullet bulletLogic = bullet.GetComponent<Bullet>();
                     Rigidbody2D rigid = bullet.GetComponent<Rigidbody2D>();
                     bulletLogic.matchCount += count;
 
-                    bulletLogic.power = dmg;
+                    bulletLogic.power = (dmg + plusPower) * power;
                     bullet.transform.localScale = new Vector3(scale,scale,0);
                 
                     //회전 함수
@@ -2103,13 +2182,13 @@ public class PlayerMove : MonoBehaviour
                 weaponCrazyFireCount++;
             } else if(weaponCrazyFireCount==1) {
                 for (int i = 0;i<6;i++ ){
-                    GameObject bullet = objectManager.Get(22);
+                    GameObject bullet = objectManager.Get(18);
                     bullet.transform.position = transform.position;
                     Bullet bulletLogic = bullet.GetComponent<Bullet>();
                     Rigidbody2D rigid = bullet.GetComponent<Rigidbody2D>();
                     bulletLogic.matchCount += count;
 
-                    bulletLogic.power = dmg;
+                    bulletLogic.power = (dmg + plusPower) * power;
                     bullet.transform.localScale = new Vector3(scale,scale,0);
 
                     //회전 함수
@@ -2123,13 +2202,13 @@ public class PlayerMove : MonoBehaviour
                 weaponCrazyFireCount++;
             } else {
                 for (int i = 0;i<3;i++ ){
-                    GameObject bullet = objectManager.Get(22);
+                    GameObject bullet = objectManager.Get(18);
                     bullet.transform.position = transform.position;
                     Bullet bulletLogic = bullet.GetComponent<Bullet>();
                     Rigidbody2D rigid = bullet.GetComponent<Rigidbody2D>();
                     bulletLogic.matchCount += count;
 
-                    bulletLogic.power = dmg;
+                    bulletLogic.power = (dmg + plusPower) * power;
                     bullet.transform.localScale = new Vector3(scale,scale,0);
 
                     //회전 함수
@@ -2150,11 +2229,11 @@ public class PlayerMove : MonoBehaviour
             for(int index = 0;index < num;index++){
                 float ranX = Random.Range(-2.0f,2.0f);
                 float ranY = Random.Range(-1.0f,7.0f);
-                GameObject bullet8 = objectManager.Get(23);
+                GameObject bullet8 = objectManager.Get(19);
                 bullet8.transform.position = new Vector3(transform.position.x+ranX, transform.position.y+ranY);
                 Rigidbody2D rigid8 = bullet8.GetComponent<Rigidbody2D>();
                 Bullet bulletLogic8 = bullet8.GetComponent<Bullet>();
-                bulletLogic8.power = dmg * power;
+                bulletLogic8.power = (dmg + plusPower) * power;
             }
         } else {
             for(int index = 0;index < num;index++){
@@ -2162,12 +2241,12 @@ public class PlayerMove : MonoBehaviour
                 float ranY = Random.Range(-1.0f,7.0f);
                 float ranScaleX = Random.Range(1f,2f);
                 float ranScaleY = Random.Range(1.5f,2.5f);
-                GameObject bullet8 = objectManager.Get(23);
+                GameObject bullet8 = objectManager.Get(19);
                 bullet8.transform.localScale = new Vector3(ranScaleX,ranScaleY,0);
                 bullet8.transform.position = new Vector3(transform.position.x+ranX, transform.position.y+ranY);
                 Rigidbody2D rigid8 = bullet8.GetComponent<Rigidbody2D>();
                 Bullet bulletLogic8 = bullet8.GetComponent<Bullet>();
-                bulletLogic8.power = dmg * power;
+                bulletLogic8.power = (dmg + plusPower) * power;
             }
         }
     }
@@ -2176,11 +2255,11 @@ public class PlayerMove : MonoBehaviour
         for(int index = 0;index < num;index++){
             float ranX = Random.Range(-2f,2f);
             float ranZ = Random.Range(-2f,2f);
-            GameObject bullet = objectManager.Get(25);
+            GameObject bullet = objectManager.Get(21);
             bullet.transform.position = transform.position;
             Rigidbody2D rigid = bullet.GetComponent<Rigidbody2D>();
             Bullet bulletLogic = bullet.GetComponent<Bullet>();
-            bulletLogic.power = dmg * power;
+            bulletLogic.power = (dmg + plusPower) * power;
             bulletLogic.matchCount += count;
             if(maxLevel){
                 bullet.transform.localScale = new Vector3(2,2,0);
@@ -2192,11 +2271,11 @@ public class PlayerMove : MonoBehaviour
     }
     void WeaponPistol(float dmg, float scale)
     {
-        GameObject bullet = objectManager.Get(26);
+        GameObject bullet = objectManager.Get(22);
         bullet.transform.position = transform.position;
         Rigidbody2D rigid = bullet.GetComponent<Rigidbody2D>();
         Bullet bulletLogic = bullet.GetComponent<Bullet>();
-        bulletLogic.power = dmg * power;
+        bulletLogic.power = (dmg + plusPower) * power;
         bullet.transform.localScale = new Vector3(scale,scale,0);
 
         //회전 함수
@@ -2210,10 +2289,10 @@ public class PlayerMove : MonoBehaviour
     void WeaponTsunami(float dmg)
     {
         for(int i =0;i<9;i++){
-            GameObject bullet = objectManager.Get(28);
+            GameObject bullet = objectManager.Get(24);
             Rigidbody2D rigid = bullet.GetComponent<Rigidbody2D>();
             Bullet bulletLogic = bullet.GetComponent<Bullet>();
-            bulletLogic.power = dmg * power;
+            bulletLogic.power = (dmg + plusPower) * power;
             Vector3 vec =  new Vector3(transform.position.x - 3.5f,transform.position.y+(4f-i),0);
             bullet.transform.position = vec;
             rigid.AddForce(Vector2.right * bulletSpeed, ForceMode2D.Impulse);
@@ -2223,11 +2302,11 @@ public class PlayerMove : MonoBehaviour
     // 메테오
     void WeaponMeteo(float dmg)
     {
-        GameObject bullet = objectManager.Get(29);
+        GameObject bullet = objectManager.Get(25);
         bullet.transform.position = new Vector3(transform.position.x -4,transform.position.y+7,0);
         Rigidbody2D rigid = bullet.GetComponent<Rigidbody2D>();
         Bullet bulletLogic = bullet.GetComponent<Bullet>();
-        bulletLogic.power = dmg;
+        bulletLogic.power = (dmg + plusPower) * power;
         rigid.AddForce(Vector2.right*2, ForceMode2D.Impulse);
         rigid.AddForce(Vector2.down*0.5f, ForceMode2D.Impulse);
     }
@@ -2235,23 +2314,23 @@ public class PlayerMove : MonoBehaviour
     void ThrowHammer(float dmg, bool maxlevel)
     {
         if(!maxlevel){
-            GameObject bullet = objectManager.Get(31);
+            GameObject bullet = objectManager.Get(27);
             Rigidbody2D rigid = bullet.GetComponent<Rigidbody2D>();
             Bullet bulletLogic = bullet.GetComponent<Bullet>();
-            bulletLogic.power = dmg * power;
+            bulletLogic.power = (dmg + plusPower) * power;
             bulletLogic.maxLevel = maxlevel;
             bulletLogic.playerCurVec = transform.position;
         } else {
-            GameObject bullet = objectManager.Get(31);
+            GameObject bullet = objectManager.Get(27);
             Rigidbody2D rigid = bullet.GetComponent<Rigidbody2D>();
             Bullet bulletLogic = bullet.GetComponent<Bullet>();
-            bulletLogic.power = dmg * power;
+            bulletLogic.power = (dmg + plusPower) * power;
             bulletLogic.playerCurVec = transform.position;
 
-            GameObject bullet1 = objectManager.Get(31);
+            GameObject bullet1 = objectManager.Get(27);
             Rigidbody2D rigid1 = bullet1.GetComponent<Rigidbody2D>();
             Bullet bulletLogic1 = bullet1.GetComponent<Bullet>();
-            bulletLogic1.power = dmg * power;
+            bulletLogic1.power = (dmg + plusPower) * power;
             bulletLogic1.maxLevel = maxlevel;
             bulletLogic1.playerCurVec = transform.position;
         }
@@ -2260,10 +2339,10 @@ public class PlayerMove : MonoBehaviour
     void MaceAttack(float dmg, float maceSpeed, bool maxlevel)
     {
         if(maxlevel){
-            GameObject bullet = objectManager.Get(32);
+            GameObject bullet = objectManager.Get(28);
             Rigidbody2D rigid = bullet.GetComponent<Rigidbody2D>();
             Bullet bulletLogic = bullet.GetComponent<Bullet>();
-            bulletLogic.power = dmg * power;
+            bulletLogic.power = (dmg + plusPower) * power;
             bullet.transform.localScale = new Vector3(0.5f,0.5f,0);
             
             Vector3 dirVec = targetImage.transform.position - transform.position;
@@ -2274,10 +2353,10 @@ public class PlayerMove : MonoBehaviour
             bullet.transform.rotation = Quaternion.Euler(0,0,degree + 90f);
             bulletLogic.playerCurVec = transform.position;
         } else {
-            GameObject bullet = objectManager.Get(32);
+            GameObject bullet = objectManager.Get(28);
             Rigidbody2D rigid = bullet.GetComponent<Rigidbody2D>();
             Bullet bulletLogic = bullet.GetComponent<Bullet>();
-            bulletLogic.power = dmg * power;
+            bulletLogic.power = (dmg + plusPower) * power;
             
             Vector3 dirVec = targetImage.transform.position - transform.position;
             bullet.transform.position = transform.position + dirVec.normalized;
@@ -2294,7 +2373,7 @@ public class PlayerMove : MonoBehaviour
         horseAttackObj.SetActive(true);
         Bullet bulletLogic = horseAttackObj.GetComponent<Bullet>();
 
-        bulletLogic.power = dmg * power;
+        bulletLogic.power = (dmg + plusPower) * power;
         if(maxLevel){
             shieldCount = 0f;
             isShield = true;
@@ -2305,9 +2384,9 @@ public class PlayerMove : MonoBehaviour
     // 십자가 공격
     void CrossAttack(float dmg, bool maxLevel)
     {
-        GameObject bullet = objectManager.Get(34);
+        GameObject bullet = objectManager.Get(30);
         Bullet bulletLogic = bullet.GetComponent<Bullet>();
-        bulletLogic.power = dmg * power;
+        bulletLogic.power = (dmg + plusPower) * power;
         bullet.transform.position = transform.position;
         if(maxLevel){
             bulletLogic.maxLevel = maxLevel;
@@ -2318,16 +2397,16 @@ public class PlayerMove : MonoBehaviour
     void LightBeam(float dmg, float speed)
     {
         Bullet bulletLogic = lightBeam.GetComponent<Bullet>();
-        bulletLogic.power = dmg * power;
+        bulletLogic.power = (dmg + plusPower) * power;
         bulletLogic.bulletSpeed = speed;
     }
     // 에너지 파동
     void EnergyForce(float dmg, bool maxLevel)
     {
-        GameObject bullet = objectManager.Get(36);
+        GameObject bullet = objectManager.Get(32);
         Bullet bulletLogic = bullet.GetComponent<Bullet>();
         Rigidbody2D rigid = bullet.GetComponent<Rigidbody2D>();
-        bulletLogic.power = dmg * power;
+        bulletLogic.power = (dmg + plusPower) * power;
         Vector3 dirVec = targetImage.transform.position - transform.position;
         bullet.transform.position = transform.position;
 
@@ -2341,10 +2420,10 @@ public class PlayerMove : MonoBehaviour
     // 에너지 파동2
     void EnergyForce2(float dmg, int count, bool maxLevel)
     {
-        GameObject bullet = objectManager.Get(37);
+        GameObject bullet = objectManager.Get(33);
         Bullet bulletLogic = bullet.GetComponent<Bullet>();
         Rigidbody2D rigid = bullet.GetComponent<Rigidbody2D>();
-        bulletLogic.power = dmg * power;
+        bulletLogic.power = (dmg + plusPower) * power;
         Vector3 dirVec = targetImage.transform.position - transform.position;
         bullet.transform.position = transform.position;
         bulletLogic.matchCount += count;
@@ -2360,29 +2439,29 @@ public class PlayerMove : MonoBehaviour
     {
         float ran = Random.Range(0.0f,100.0f);
         if(ran<12.5f){ // 12.5% 곡괭이
-            WeaponPickaxe(120 * level,1 * level, count,maxLevel);
+            WeaponPickaxe((120 + plusPower) * level * power,1 * level, count,maxLevel);
         } else if (ran<25f){ // 12.5% 아이스 스피어
-            WeaponIceSpear(50 * level, 1f, count,maxLevel);
+            WeaponIceSpear((50 + plusPower) * level * power, 1f, count,maxLevel);
         } else if (ran<37.5f){ // 12.5% 삼지창
-            WeaponTrident(80 * level,0.5f + level/10, count,maxLevel);
+            WeaponTrident((80 + plusPower) * level * power,0.5f + level/10, count,maxLevel);
         } else if(ran<50f){ // 12.5% 돌아가는 망치
-            ThrowHammer(50 * level,maxLevel);
+            ThrowHammer((50 + plusPower) * level * power,maxLevel);
         } else if(ran<62.5f){ // 12.5% 윈드 포스
             if(maxLevel){
-                WeaponWindForce(30 * level,1.5f,1f);
+                WeaponWindForce((30 + plusPower) * level * power,1.5f,1f);
             } else {
-                WeaponWindForce(30 * level,1f,1f);
+                WeaponWindForce((30 + plusPower) * level * power,1f,1f);
             }
         } else if(ran<75f){ // 12.5% 삽
             if(maxLevel){
-                WeaponShovel(100 * level,2 * level, count);
+                WeaponShovel((100 + plusPower) * level * power,2 * level, count);
             } else{
-                WeaponShovel(100 * level,1 * level, count);
+                WeaponShovel((100 + plusPower) * level * power,1 * level, count);
             }
         } else if(ran<87.5f){ // 12.5% 체인 라이트닝
-            WeaponChainLightning(40 * level, 1+level,maxLevel);
+            WeaponChainLightning((40 + plusPower) * level * power, 1+level,maxLevel);
         } else if(ran<100.0f){ // 12.5% 십자가 공격
-            CrossAttack(40 * level,maxLevel);
+            CrossAttack((40 + plusPower) * level * power,maxLevel);
         }
     }
     // 지뢰
@@ -2390,10 +2469,10 @@ public class PlayerMove : MonoBehaviour
     {
         float ranX = Random.Range(-1.5f,1.5f);
         float ranY = Random.Range(-4.5f,4.5f);
-        GameObject bullet = objectManager.Get(38);
+        GameObject bullet = objectManager.Get(34);
         bullet.transform.position = new Vector3(transform.position.x+ranX, transform.position.y+ranY);
         Bullet bulletLogic = bullet.GetComponent<Bullet>();
-        bulletLogic.power = dmg * power;
+        bulletLogic.power = (dmg + plusPower) * power;
         bullet.transform.localScale = new Vector3(scale,scale,0);
     }
     // 터렛
@@ -2402,7 +2481,7 @@ public class PlayerMove : MonoBehaviour
         if(maxLevel){
             if(turretObj.activeSelf){
                 PlayerObj turret = turretObj.GetComponent<PlayerObj>();
-                turret.power = dmg * power;
+                turret.power = (dmg + plusPower) * power;
                 turret.Fire(maxLevel);
             } else {
                 turretObj.transform.localScale = new Vector3(scale, scale, 0);
@@ -2410,18 +2489,19 @@ public class PlayerMove : MonoBehaviour
                 Vector2 pos = new Vector2(transform.position.x+1f,transform.position.y);
                 turretObj.transform.position = pos;
                 PlayerObj turret = turretObj.GetComponent<PlayerObj>();
-                turret.power = dmg * power;
+                turret.power = (dmg + plusPower) * power;
                 turret.maxLevel = maxLevel;
             }
         } else {
             if(turretObj.activeSelf){
                 PlayerObj turret = turretObj.GetComponent<PlayerObj>();
-                turret.power = dmg * power;
+                turret.power = (dmg + plusPower) * power;
                 turret.Fire(maxLevel);
             } else {
                 PlayerObj turret = turretObj.GetComponent<PlayerObj>();
                 turretObj.transform.localScale = new Vector3(scale, scale, 0);
                 turretObj.SetActive(true);
+                turret.power = (dmg + plusPower) * power;
                 Vector2 pos = new Vector2(transform.position.x+1f,transform.position.y);
                 turretObj.transform.position = pos;
             }
@@ -2430,11 +2510,11 @@ public class PlayerMove : MonoBehaviour
     // 활 던지기
     void BowThrow(float dmg, int count, bool maxLevel)
     {
-        GameObject bullet = objectManager.Get(40);
+        GameObject bullet = objectManager.Get(36);
         bullet.transform.position = transform.position;
         Rigidbody2D rigid = bullet.GetComponent<Rigidbody2D>();
         Bullet bulletLogic = bullet.GetComponent<Bullet>();
-        bulletLogic.power = dmg * power;
+        bulletLogic.power = (dmg + plusPower) * power;
 
         Vector3 dirVec = targetImage.transform.position - transform.position;
         //회전 함수
@@ -2449,14 +2529,14 @@ public class PlayerMove : MonoBehaviour
     {
         if(bearObj.activeSelf){
             PlayerObj bear = bearObj.GetComponent<PlayerObj>();
-            bear.power = dmg * power;
+            bear.power = (dmg + plusPower) * power;
             bear.Fire(maxLevel);
         } else {
             PlayerObj bear = bearObj.GetComponent<PlayerObj>();
             bear.life = objLife;
             bear.maxLife = objLife;
             bearObj.SetActive(true);
-            bear.power = dmg * power;
+            bear.power = (dmg + plusPower) * power;
             Vector2 pos = new Vector2(transform.position.x+1f,transform.position.y);
             bearObj.transform.position = pos;
         }
@@ -2475,25 +2555,25 @@ public class PlayerMove : MonoBehaviour
         if(skullCount < count){
             int ran = Random.Range(0,2);
             if(ran == 0){ // 스켈레톤
-                GameObject skull = objectManager.Get(43);
+                GameObject skull = objectManager.Get(39);
                 PlayerObj skullLogic = skull.GetComponent<PlayerObj>();
                 skullLogic.life = objLife;
                 skullLogic.maxLife = objLife;
                 skullLogic.type = "Skull";
-                skullLogic.power = dmg * power;
+                skullLogic.power = (dmg + plusPower) * power;
                 skullLogic.maxLevel = maxLevel;
                 Vector2 pos = new Vector2(transform.position.x+1f,transform.position.y);
                 skull.transform.position = pos;
                 skullCount++;
                 skullLogic.elementalType = "None";
             } else if(ran == 1){ // 궁수
-                GameObject bowSkull = objectManager.Get(43);
+                GameObject bowSkull = objectManager.Get(39);
                 Vector2 pos = new Vector2(transform.position.x+1f,transform.position.y);
                 PlayerObj bowSkullLogic = bowSkull.GetComponent<PlayerObj>();
                 bowSkullLogic.life = objLife*0.8f;
                 bowSkullLogic.maxLife = objLife*0.8f;
                 bowSkullLogic.type = "BowSkull";
-                bowSkullLogic.power = (dmg*1.1f) * power;
+                bowSkullLogic.power = (dmg + plusPower)* 1.1f * power;
                 bowSkullLogic.maxLevel = maxLevel;
                 bowSkull.transform.position = pos;
                 skullCount++;
@@ -2506,16 +2586,16 @@ public class PlayerMove : MonoBehaviour
     {
         int ran = Random.Range(0,2);
         PlayerObj birdLogic = birdObj.GetComponent<PlayerObj>();
-        birdLogic.power = dmg;
+        // birdLogic.power = (dmg + plusPower) * power;
         if(!birdObj.activeSelf){
-            birdObj.SetActive(true);    
+            birdObj.SetActive(true);
         } else {
             if(maxLevel){
                 // 가로
-                GameObject bullet = objectManager.Get(47);
+                GameObject bullet = objectManager.Get(43);
                 Rigidbody2D rigid = bullet.GetComponent<Rigidbody2D>();
                 Bullet bulletLogic = bullet.GetComponent<Bullet>();
-                bulletLogic.power = dmg * power;
+                bulletLogic.power = (dmg + plusPower) * power;
                 bulletLogic.matchCount += count;
 
                 bullet.transform.position = new Vector2(targetImage.transform.position.x, transform.position.y+5f);
@@ -2524,10 +2604,10 @@ public class PlayerMove : MonoBehaviour
                 rigid.AddForce(Vector2.down * bulletSpeed, ForceMode2D.Impulse);
 
                 // 세로
-                GameObject bullet1 = objectManager.Get(47);
+                GameObject bullet1 = objectManager.Get(43);
                 Rigidbody2D rigid1 = bullet1.GetComponent<Rigidbody2D>();
                 Bullet bulletLogic1 = bullet1.GetComponent<Bullet>();
-                bulletLogic1.power = dmg * power;
+                bulletLogic1.power = (dmg + plusPower) * power;
                 bulletLogic1.matchCount += count;
 
                 bullet1.transform.position = new Vector2(transform.position.x+4f, targetImage.transform.position.y);
@@ -2536,10 +2616,10 @@ public class PlayerMove : MonoBehaviour
                 rigid1.AddForce(Vector2.left * bulletSpeed, ForceMode2D.Impulse);
             } else {
                 if(ran ==0){ // 세로 공격
-                    GameObject bullet = objectManager.Get(47);
+                    GameObject bullet = objectManager.Get(43);
                     Rigidbody2D rigid = bullet.GetComponent<Rigidbody2D>();
                     Bullet bulletLogic = bullet.GetComponent<Bullet>();
-                    bulletLogic.power = dmg * power;
+                    bulletLogic.power = (dmg + plusPower) * power;
                     bulletLogic.matchCount += count;
 
                     bullet.transform.position = new Vector2(targetImage.transform.position.x, transform.position.y+5f);
@@ -2547,10 +2627,10 @@ public class PlayerMove : MonoBehaviour
                     bullet.transform.rotation = Quaternion.Euler(0,0,180f);
                     rigid.AddForce(Vector2.down * bulletSpeed, ForceMode2D.Impulse);
                 } else { //가로 공격
-                    GameObject bullet = objectManager.Get(47);
+                    GameObject bullet = objectManager.Get(43);
                     Rigidbody2D rigid = bullet.GetComponent<Rigidbody2D>();
                     Bullet bulletLogic = bullet.GetComponent<Bullet>();
-                    bulletLogic.power = dmg * power;
+                    bulletLogic.power = (dmg + plusPower) * power;
                     bulletLogic.matchCount += count;
 
                     bullet.transform.position = new Vector2(transform.position.x+4f, targetImage.transform.position.y);
@@ -2566,11 +2646,11 @@ public class PlayerMove : MonoBehaviour
     {
         if(!snake){
             snake = true;
-            GameObject bullet = objectManager.Get(48);
+            GameObject bullet = objectManager.Get(44);
             bullet.transform.localScale = new Vector3(scale, scale, 0);
             bullet.transform.position = transform.position;
             Bullet bulletLogic = bullet.GetComponent<Bullet>();
-            bulletLogic.power = dmg * power;
+            bulletLogic.power = (dmg + plusPower) * power;
             if(maxLevel){
                 PointEffector2D bulletPointer = bullet.GetComponent<PointEffector2D>();
                 bulletPointer.forceMagnitude = -30;
@@ -2589,7 +2669,7 @@ public class PlayerMove : MonoBehaviour
                 golemLogic.type = "IceGolem";
                 golemLogic.life = life;
                 golemLogic.maxLife = life;
-                golemLogic.power = dmg * power;
+                golemLogic.power = (dmg + plusPower) * power;
                 Vector2 pos = new Vector2(transform.position.x+1f,transform.position.y);
                 golemObj.transform.position = pos;
                 golemLogic.maxLevel = maxLevel;
@@ -2598,7 +2678,7 @@ public class PlayerMove : MonoBehaviour
                 golemLogic.elementalType = "Ice";
             } else {
                 PlayerObj golem = golemObj.GetComponent<PlayerObj>();
-                golem.power = dmg * power;
+                golem.power = (dmg + plusPower) * power;
                 golem.Fire(maxLevel);
             }
         } else if(ran==1){ // 파이어 골렘
@@ -2609,7 +2689,7 @@ public class PlayerMove : MonoBehaviour
                 golemLogic.type = "FireGolem";
                 golemLogic.life = life;
                 golemLogic.maxLife = life;
-                golemLogic.power = (dmg * power) * 0.8f;
+                golemLogic.power = (dmg + plusPower) * power;
                 Vector2 pos = new Vector2(transform.position.x+1f,transform.position.y);
                 golemObj.transform.position = pos;
                 golemLogic.maxLevel = maxLevel;
@@ -2618,7 +2698,7 @@ public class PlayerMove : MonoBehaviour
                 golemLogic.elementalType = "Fire";
             } else {
                 PlayerObj golem = golemObj.GetComponent<PlayerObj>();
-                golem.power = dmg * power;
+                golem.power = (dmg + plusPower) * power;
                 golem.Fire(maxLevel);
             }
         } else if(ran==3){ // 돌 골렘
@@ -2629,7 +2709,7 @@ public class PlayerMove : MonoBehaviour
                 golemLogic.type = "StoneGolem";
                 golemLogic.life = life;
                 golemLogic.maxLife = life;
-                golemLogic.power = dmg * power;
+                golemLogic.power = (dmg + plusPower) * power;
                 Vector2 pos = new Vector2(transform.position.x+1f,transform.position.y);
                 golemObj.transform.position = pos;
                 golemLogic.maxLevel = maxLevel;
@@ -2638,7 +2718,7 @@ public class PlayerMove : MonoBehaviour
                 golemLogic.elementalType = "Stone";
             } else {
                 PlayerObj golem = golemObj.GetComponent<PlayerObj>();
-                golem.power = dmg * power;
+                golem.power = (dmg + plusPower) * power;
                 golem.Fire(maxLevel);
             }
         } else if(ran==4){ // 물 골렘
@@ -2649,7 +2729,7 @@ public class PlayerMove : MonoBehaviour
                 golemLogic.type = "WaterGolem";
                 golemLogic.life = life;
                 golemLogic.maxLife = life;
-                golemLogic.power = dmg * power;
+                golemLogic.power = (dmg + plusPower) * power;
                 Vector2 pos = new Vector2(transform.position.x+1f,transform.position.y);
                 golemObj.transform.position = pos;
                 golemLogic.maxLevel = maxLevel;
@@ -2658,7 +2738,7 @@ public class PlayerMove : MonoBehaviour
                 golemLogic.elementalType = "Water";
              } else {
                 PlayerObj golem = golemObj.GetComponent<PlayerObj>();
-                golem.power = dmg * power;
+                golem.power = (dmg + plusPower) * power;
                 golem.Fire(maxLevel);
             }
         } else { // 전기 골렘
@@ -2669,7 +2749,7 @@ public class PlayerMove : MonoBehaviour
                 golemLogic.type = "LightningGolem";
                 golemLogic.life = life;
                 golemLogic.maxLife = life;
-                golemLogic.power = (dmg * power)*0.8f;
+                golemLogic.power = (dmg + plusPower) * power;
                 Vector2 pos = new Vector2(transform.position.x+1f,transform.position.y);
                 golemObj.transform.position = pos;
                 golemLogic.maxLevel = maxLevel;
@@ -2679,7 +2759,7 @@ public class PlayerMove : MonoBehaviour
                 golemLogic.elementalType = "Lightning";
             } else {
                 PlayerObj golem = golemObj.GetComponent<PlayerObj>();
-                golem.power = dmg * power;
+                golem.power = (dmg + plusPower) * power;
                 golem.Fire(maxLevel);
             }
         }
@@ -2689,9 +2769,9 @@ public class PlayerMove : MonoBehaviour
     {
         if(!isLake){
             isLake=true;
-            GameObject bullet = objectManager.Get(50);
+            GameObject bullet = objectManager.Get(46);
             PlayerObj lakeLogic = bullet.GetComponent<PlayerObj>();
-            lakeLogic.power = dmg * power;
+            lakeLogic.power = (dmg + plusPower) * power;
             Vector2 pos = new Vector2(transform.position.x+1f,transform.position.y);
             bullet.transform.position = pos;
             lakeLogic.maxLevel = maxLevel;
@@ -2724,6 +2804,10 @@ public class PlayerMove : MonoBehaviour
     }
     public void Healing(float healValue)
     {
+        audioSource.clip = gameManager.audioManager.healingAudio;
+        if(!audioSource.isPlaying){
+            gameManager.audioManager.PlayOneShotSound(audioSource, audioSource.clip, 1);
+        }
         if(gameManager.character=="Hunter"){
             healValue *= 2f;
         }
@@ -2748,47 +2832,12 @@ public class PlayerMove : MonoBehaviour
                 bool onScreen = screenPoint.z > 0 && screenPoint.x > 0 && screenPoint.x < 1 && screenPoint.y > 0 && screenPoint.y < 1;
                 if(onScreen){
                     EnemyMove enemyLogicA = objectManager.pools[0][index].GetComponent<EnemyMove>();
-                    enemyLogicA.OnHit(dmg);
-                }
-            }
-        }
-        for(int index=0; index<objectManager.pools[1].Count;index++){
-            if(objectManager.pools[1][index].activeSelf){
-                Vector3 screenPoint = cam.WorldToViewportPoint(objectManager.pools[1][index].transform.position);
-                bool onScreen = screenPoint.z > 0 && screenPoint.x > 0 && screenPoint.x < 1 && screenPoint.y > 0 && screenPoint.y < 1;
-                if(onScreen){
-                    EnemyMove enemyLogicA = objectManager.pools[1][index].GetComponent<EnemyMove>();
-                    enemyLogicA.OnHit(dmg);
-                }
-            }
-        }
-        for(int index=0; index<objectManager.pools[2].Count;index++){
-            if(objectManager.pools[2][index].activeSelf){
-                Vector3 screenPoint = cam.WorldToViewportPoint(objectManager.pools[2][index].transform.position);
-                bool onScreen = screenPoint.z > 0 && screenPoint.x > 0 && screenPoint.x < 1 && screenPoint.y > 0 && screenPoint.y < 1;
-                if(onScreen){
-                    EnemyMove enemyLogicA = objectManager.pools[2][index].GetComponent<EnemyMove>();
-                    enemyLogicA.OnHit(dmg);
-                }
-            }
-        }
-        for(int index=0; index<objectManager.pools[3].Count;index++){
-            if(objectManager.pools[3][index].activeSelf){
-                Vector3 screenPoint = cam.WorldToViewportPoint(objectManager.pools[3][index].transform.position);
-                bool onScreen = screenPoint.z > 0 && screenPoint.x > 0 && screenPoint.x < 1 && screenPoint.y > 0 && screenPoint.y < 1;
-                if(onScreen){
-                    EnemyMove enemyLogicA = objectManager.pools[3][index].GetComponent<EnemyMove>();
-                    enemyLogicA.OnHit(dmg);
-                }
-            }
-        }
-        for(int index=0; index<objectManager.pools[4].Count;index++){
-            if(objectManager.pools[4][index].activeSelf){
-                Vector3 screenPoint = cam.WorldToViewportPoint(objectManager.pools[4][index].transform.position);
-                bool onScreen = screenPoint.z > 0 && screenPoint.x > 0 && screenPoint.x < 1 && screenPoint.y > 0 && screenPoint.y < 1;
-                if(onScreen){
-                    EnemyMove enemyLogicA = objectManager.pools[4][index].GetComponent<EnemyMove>();
-                    enemyLogicA.OnHit(dmg);
+                    if(!isBoom){
+                        enemyLogicA.OnHit(objectManager.pools[0][index].transform.position, dmg, "Fire");
+                    } else {
+                        enemyLogicA.OnHit(dmg);
+                    }
+                    
                 }
             }
         }
@@ -2796,14 +2845,14 @@ public class PlayerMove : MonoBehaviour
             return;
 
         // 모든 적군의 총알을 없앤다
-        for(int index=0; index<objectManager.pools[51].Count;index++){
-            if(objectManager.pools[51][index].activeSelf){
-                objectManager.pools[51][index].SetActive(false);
+        for(int index=0; index<objectManager.pools[47].Count;index++){
+            if(objectManager.pools[47][index].activeSelf){
+                objectManager.pools[47][index].SetActive(false);
             }
         }
-        for(int index=0; index<objectManager.pools[52].Count;index++){
-            if(objectManager.pools[52][index].activeSelf){
-                objectManager.pools[52][index].SetActive(false);
+        for(int index=0; index<objectManager.pools[48].Count;index++){
+            if(objectManager.pools[48][index].activeSelf){
+                objectManager.pools[48][index].SetActive(false);
             }
         }
     }
@@ -2824,27 +2873,15 @@ public class PlayerMove : MonoBehaviour
                 enemyALogic.EnemyDead();
             }
         }
-        for(int index=0; index<objectManager.pools[1].Count;index++){
-            if(objectManager.pools[1][index].activeSelf){
-                EnemyMove enemyALogic = objectManager.pools[1][index].GetComponent<EnemyMove>();
-                enemyALogic.EnemyDead();
-            }
-        }
-        for(int index=0; index<objectManager.pools[2].Count;index++){
-            if(objectManager.pools[2][index].activeSelf){
-                EnemyMove enemyALogic = objectManager.pools[2][index].GetComponent<EnemyMove>();
-                enemyALogic.EnemyDead();
-            }
-        }
         // 모든 적군의 총알을 없앤다
-        for(int index=0; index<objectManager.pools[51].Count;index++){
-            if(objectManager.pools[51][index].activeSelf){
-                objectManager.pools[51][index].SetActive(false);
+        for(int index=0; index<objectManager.pools[47].Count;index++){
+            if(objectManager.pools[47][index].activeSelf){
+                objectManager.pools[47][index].SetActive(false);
             }
         }
-        for(int index=0; index<objectManager.pools[52].Count;index++){
-            if(objectManager.pools[52][index].activeSelf){
-                objectManager.pools[52][index].SetActive(false);
+        for(int index=0; index<objectManager.pools[48].Count;index++){
+            if(objectManager.pools[48][index].activeSelf){
+                objectManager.pools[48][index].SetActive(false);
             }
         }
     }
@@ -2873,7 +2910,7 @@ public class PlayerMove : MonoBehaviour
     //과부화 함수
     public void isOverload(string type)
     {
-        GameObject overload = objectManager.Get(58);
+        GameObject overload = objectManager.Get(54);
         Effect overloadLogic = overload.GetComponent<Effect>();
         overload.gameObject.transform.position = transform.position;
         overloadLogic.power = lightningDamage + fireDamage;

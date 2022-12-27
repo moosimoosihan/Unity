@@ -9,6 +9,7 @@ public class Item : MonoBehaviour
     public Rigidbody2D rigid;
     public bool isMagnetOn;
     GameObject player;
+    AudioSource audioSource;
     void OnEnable()
     {
         isMagnetOn = false;
@@ -18,6 +19,7 @@ public class Item : MonoBehaviour
     }
     void Awake()
     {
+        audioSource = GetComponent<AudioSource>();
         gameManager = GameManager.instance;
         player = GameManager.instance.player;
         rigid = GetComponent<Rigidbody2D>();
@@ -31,14 +33,17 @@ public class Item : MonoBehaviour
         if(isMagnetOn)
             return;
 
-        if(other.gameObject.tag=="Mag"){
+        if(other.gameObject.tag=="Mag" && !isMagnetOn){
+            if(!audioSource.isPlaying){
+                gameManager.audioManager.PlayOneShotSound(audioSource, audioSource.clip, audioSource.volume);
+            }
             Vector2 nextPos = player.transform.position - transform.position;
             rigid.velocity = -nextPos * 5;
             Invoke("isMagOn",0.3f);
         } else if (other.gameObject.tag=="BorderBullet"){ // 박스가 멀리 떨어지면
             if(type == "Box"){
-                int ran = Random.Range(0,gameManager.spawnPoints.Length - 1);
-                gameObject.transform.position = gameManager.spawnPoints[ran].position;
+                int ran = Random.Range(0,gameManager.spawner.spawnPoints.Length - 1);
+                gameObject.transform.position = gameManager.spawner.spawnPoints[ran].position;
             }
         }
     }
@@ -50,7 +55,7 @@ public class Item : MonoBehaviour
         Vector3 nextPos = player.transform.position - transform.position;
         rigid.velocity = nextPos * 10;
     }
-    void isMagOn()
+    public void isMagOn()
     {
         isMagnetOn = true;
     }

@@ -7,14 +7,12 @@ using UnityEngine.SceneManagement;
 using Cinemachine;
 //using GoogleMobileAds.Api;
 
-
 public class GameManager : MonoBehaviour
 {
-    public bool isBoss; // 보스랑 싸우는 중인가?
-
-    //보스 클리어 체크
-    public bool boss1Clear;
-    public bool boss2Clear;
+    public int stage;
+    public bool stageEnd;
+    public ObjectManager objectManager;
+    public Spawner spawner;
 
     //광고 함수
     //private InterstitialAd interstitial;
@@ -42,40 +40,21 @@ public class GameManager : MonoBehaviour
     public string character;
     public int maxLevelCount;
 
-
-    //적군 소환
-    public string[] enemyObjs;
-    public Transform[] spawnPoints;
-    public float curSpawnDelay;
-    public ObjectManager objectManager;
-    public int spawnIndex;
-    public bool spawnEnd;
-    public int stage;
-    public bool bossClear;
-    public bool stageEnd;
-    bool wave1;
-    bool wave2;
-    bool wave3;
-    float spawnTime = 0.3f;
-
     //UI 함수
     public Image expBar;
     public Text levelText;
     public Text timeText;
-    float _sec;
-    float _min;
+    public float _sec;
+    public float _min;
     public Text enemyClearCountText;
     public Image delayBar;
     public Text glodText;
     public GameObject playerUI;
     public GameObject pausePanel;
     public GameObject pauseButton;
-    public GameObject bossHealthBar;
-    public Image bossHealth;
     public GameObject playerDeadPanel;
     public GameObject playerDeadChancePanel;
-    public GameObject eventPanel;
-    public Text eventText;
+
     public Animator camAnim;
     public Text gameOverText;
     public Text[] retryButtonText;
@@ -112,17 +91,16 @@ public class GameManager : MonoBehaviour
 
     float targetCountTime; //새로운 타겟을 선별 하는 타임 함수
     bool isLevelUp = false;
-    public GameObject bossSquare; // 보스 전장
     public CinemachineVirtualCamera cineCam;
-
-    //상자 함수
-    float boxCreatTime;
-
 
     //저장 함수
     int clearStage;
     int gold;
     int grobalGold;
+
+    // 오디오 함수
+    public AudioManager audioManager;
+    AudioSource audioSource;
 
     void Start()
     {
@@ -446,7 +424,7 @@ public class GameManager : MonoBehaviour
 
         for (int i = 0;i<5;i++){ // 처음 시작시 랜덤하게 5개 주고 시작
             Vector3 ranVec = new Vector3(Random.Range(-3.0f,3.0f),Random.Range(0.5f,3.0f),0);
-            GameObject itemExp0 = objectManager.Get(5);
+            GameObject itemExp0 = objectManager.Get(1);
             itemExp0.transform.position = playerPos.position + ranVec;
         }
         
@@ -458,78 +436,21 @@ public class GameManager : MonoBehaviour
         stageEnd= true;
         Invoke("StageClear",5f);
     }
-
-
-    void spawnEnemy()
-    {
-        //소환 함수
-        curSpawnDelay += Time.deltaTime;
-        if(curSpawnDelay > spawnTime && !spawnEnd){
-            int ranEnemy;
-            if(_min < 4 ){
-                ranEnemy = 0;
-            } else if(_min < 9){
-                ranEnemy = Random.Range(0,2);
-            } else {
-                ranEnemy = Random.Range(0,3);
-            }
-            int ranPoint = Random.Range(0, spawnPoints.Length-1);
-
-            GameObject enemy = objectManager.Get(ranEnemy);
-            if(!poolObj.Contains(enemy)){
-                poolObj.Add(enemy);
-            }
-            enemy.transform.position = spawnPoints[ranPoint].position;
-            Rigidbody2D rigid = enemy.GetComponent<Rigidbody2D>();
-            EnemyMove enemyLogic = enemy.GetComponent<EnemyMove>();
-            Rigidbody2D playerRigid = playerMove.GetComponent<Rigidbody2D>();
-            enemyLogic.playerRigid = playerRigid;
-            enemyLogic.player = player;
-            enemyLogic.playerLogic = playerMove;
-            enemyLogic.objectManager = objectManager;
-            enemyLogic.gameManager = this;
-            enemyCount++;
-            curSpawnDelay = 0;
-            // 2분 30초
-            if(_min >= 2 && !wave1){
-                wave1 = true;
-                Event("EventIn");
-            } else if(wave1 && _min >= 3){
-                Event("EventOut");
-            }
-            // 7분 30초
-            if(_min >= 7 && !wave2){
-                wave2 = true;
-                Event("EventIn");
-            } else if(wave2 && _min >= 8){
-                Event("EventOut");
-            }
-            // 12분 30초
-            if(_min >= 12 && !wave3){
-                wave3 = true;
-                Event("EventIn");
-            } else if(wave3 && _min >= 13){
-                Event("EventOut");
-            }
-        }
-    }
     void Awake()
     {
+        audioSource = GetComponent<AudioSource>();
         stage = PlayerPrefs.GetInt("CurStage");
         instance = this;
     }
     void Update()
     {
         Timer();
-        BossCheck();
         if(language == "English"){
             levelText.text = "Level " + playerLevel.ToString();
         } else if(language == "Korean"){
             levelText.text = "레벨 " + playerLevel.ToString();
         }
         
-        BoxCreat();
-
         // exp 게이지
         expBar.fillAmount = playerMove.exp / levelUpExp;
 
@@ -547,24 +468,23 @@ public class GameManager : MonoBehaviour
 
         //플레이어를 따라가는 UI
         playerUI.transform.position = Camera.main.WorldToScreenPoint(player.transform.position + new Vector3(0, -0.4f, 0));
-
-        if(spawnEnd && !bossClear){
-            spawnEnd = false;
-        }
-        if(isBoss || stageEnd){
-            spawnEnd = true;
-        }
-
-        spawnEnemy();
-        
+       
         //레벨 업 함수
         if(playerMove.exp >= levelUpExp && !isLevelUp){
             isLevelUp = true;
-            playerMove.exp -= levelUpExp;
-            LevelUp();
-            playerLevel++;
-            levelUpExp += 50;
+            Invoke("ExpLevelUp",0.5f);
         }
+    }
+    void ExpLevelUp()
+    {
+        audioSource.clip = audioManager.LevelUpAuido;
+        if(!audioSource.isPlaying){
+            audioManager.PlayOneShotSound(audioSource, audioSource.clip, audioSource.volume);
+        }
+        playerMove.exp -= levelUpExp;
+        LevelUp();
+        playerLevel++;
+        levelUpExp += 50;
     }
     void FixedUpdate()
     {
@@ -579,25 +499,6 @@ public class GameManager : MonoBehaviour
             _min++;
         }
     }
-    void BossCheck(){
-        if(isBoss)
-            return;
-
-        if(_min>=5){
-            if(!boss1Clear){
-                Boss(1);
-            }
-        }
-        if(_min>=10){
-            if(!boss2Clear){
-                Boss(1);
-            }
-        }
-        if(_min>=15 && boss2Clear && boss1Clear){
-            Boss(2);
-        }
-    }
-
     void LevelUp()
     {
         //레벨업시 무기 혹은 패시브 스킬 고르는 함수
@@ -607,6 +508,10 @@ public class GameManager : MonoBehaviour
     }
     public void ClickSelectButton(int num)
     {
+        audioSource.clip = audioManager.selectAuido;
+        if(!audioSource.isPlaying){
+            audioManager.PlayOneShotSound(audioSource, audioSource.clip, audioSource.volume);
+        }
         if(selectNumber[num]==-1){
             playerMove.gold += 100;
         } else {
@@ -780,26 +685,6 @@ public class GameManager : MonoBehaviour
             }
         }
     }
-    void Event(string type)
-    {
-        switch(type){
-            case "EventIn":
-                eventPanel.SetActive(true);
-                spawnTime = 0.1f;
-                // camAnim.SetBool("IsOn",true);
-                if(language == "English"){
-                    eventText.text = "warning!\nMonsters are coming.";
-                } else if(language == "Korean"){
-                    eventText.text = "경고!\n몬스터 무리가 다가옵니다.";
-                }
-                break;
-            case "EventOut":
-                spawnTime = 0.5f;
-                // 적군이 더 이상 없을 경우 아웃(혹시 있다면 시간을 딜레이)
-                // camAnim.SetBool("IsOn",false);
-            break;
-        }
-    }
     void StartLevelUp()
     {
         //시작시 무기 스킬 고르는 함수
@@ -809,7 +694,7 @@ public class GameManager : MonoBehaviour
     }
     public void DamageText(Vector3 pos, float dmg, string type, bool criticalCheck)
     {
-        GameObject damageText = objectManager.Get(60);
+        GameObject damageText = objectManager.Get(56);
         DamageText damageTextLogic = damageText.GetComponent<DamageText>();
 
         damageText.transform.position = pos;
@@ -817,7 +702,7 @@ public class GameManager : MonoBehaviour
     }
     public void StateText(Vector3 pos, string type)
     {
-        GameObject damageText = objectManager.Get(60);
+        GameObject damageText = objectManager.Get(56);
         DamageText damageTextLogic = damageText.GetComponent<DamageText>();
         damageTextLogic.language = language;
 
@@ -871,6 +756,10 @@ public class GameManager : MonoBehaviour
     }
     public void playerDead()
     {
+        audioSource.clip = audioManager.LoseAuido;
+        if(!audioSource.isPlaying){
+            audioManager.PlayOneShotSound(audioSource, audioSource.clip, audioSource.volume);
+        }
         pauseButton.SetActive(false);
         if(language == "English"){
             gameOverText.text = stage + "Game Over!";
@@ -927,6 +816,10 @@ public class GameManager : MonoBehaviour
     }
     void StageClear()
     {
+        audioSource.clip = audioManager.winAuido;
+        if(!audioSource.isPlaying){
+            audioManager.PlayOneShotSound(audioSource, audioSource.clip, audioSource.volume);
+        }
         if(language == "English"){
             gameOverText.text = stage + " Stage Clear!";
         } else if(language == "Korean"){
@@ -956,10 +849,10 @@ public class GameManager : MonoBehaviour
         }
         return true;
     }
-    private IEnumerator InvokeRealTimeHelper (string fuctionName, float delay){
+    private IEnumerator InvokeTimeHelper (string fuctionName, float delay){
         float timeElapsed = 0f;
         while (timeElapsed < delay){
-            timeElapsed += Time.unscaledDeltaTime;
+            timeElapsed += Time.deltaTime;
             yield return null;
         }
         SendMessage(fuctionName);
@@ -975,8 +868,7 @@ public class GameManager : MonoBehaviour
 
     void TargetFind()
     {
-        // 적군이 012
-        if(targetCountTime>=0.5f){
+        if(targetCountTime>=0.1f){
             for(int i=0;i<poolObj.Count;i++){
                 if(poolObj[i].activeSelf){ // 해당 적군이 활성화 되었을 경우
                     if(IsTargetVisible(cam, poolObj[i].transform)){ // 해당 적군이 화면 안에 있다면
@@ -1037,88 +929,5 @@ public class GameManager : MonoBehaviour
         playerMove.gameObject.layer = 6;
         Time.timeScale = 1;
         pauseButton.SetActive(true);
-    }
-    void BoxCreat()
-    {
-        if(boxCreatTime<=0){
-            int ranTime = Random.Range(30,60);
-            boxCreatTime = ranTime;
-            int ran = Random.Range(0,spawnPoints.Length-1);
-            GameObject enemy = objectManager.Get(61);
-            enemy.transform.position = spawnPoints[ran].position;
-            Rigidbody2D rigid = enemy.GetComponent<Rigidbody2D>();
-            EnemyMove enemyLogic = enemy.GetComponent<EnemyMove>();
-            Rigidbody2D playerRigid = playerMove.GetComponent<Rigidbody2D>();
-            enemyLogic.playerRigid = playerRigid;
-            enemyLogic.player = player;
-            enemyLogic.playerLogic = playerMove;
-            enemyLogic.objectManager = objectManager;
-            enemyLogic.gameManager = this;
-        } else {
-            boxCreatTime -= Time.deltaTime;
-        }
-    }
-    void Boss(int bossNum)
-    {
-        isBoss = true;
-        eventPanel.SetActive(true);
-        // camAnim.SetBool("IsOn",true);
-        if(language == "English"){
-            eventText.text = "warning!\nBoss is coming.";
-        } else if(language == "Korean"){
-            eventText.text = "경고!\n보스가 등장합니다.";
-        }
-        if(bossNum == 1){ // 중간 보스
-            Invoke("EnemyClearAndBoss1",3f);
-        } else if(bossNum == 2){ // 마지막 보스
-            Invoke("EnemyClearAndBoss2",3f);
-        }
-        
-    }
-    void EnemyClearAndBoss1()
-    {
-        spawnEnd = true;
-        playerMove.EnemyOff();
-        bossHealthBar.SetActive(true);
-        GameObject enemy = objectManager.Get(3);
-        if(!poolObj.Contains(enemy)){
-            poolObj.Add(enemy);
-        }
-        enemy.transform.position = spawnPoints[20].position;
-        Rigidbody2D rigid = enemy.GetComponent<Rigidbody2D>();
-        EnemyMove enemyLogic = enemy.GetComponent<EnemyMove>();
-        Rigidbody2D playerRigid = playerMove.GetComponent<Rigidbody2D>();
-        enemyLogic.playerRigid = playerRigid;
-        enemyLogic.player = player;
-        enemyLogic.playerLogic = playerMove;
-        enemyLogic.objectManager = objectManager;
-        enemyLogic.gameManager = this;
-        cineCam.Follow = bossSquare.transform;
-        bossSquare.SetActive(true);
-        bossSquare.transform.position = playerMove.transform.position;
-        enemyCount++;
-    }
-    void EnemyClearAndBoss2()
-    {
-        spawnEnd = true;
-        playerMove.EnemyOff();
-        bossHealthBar.SetActive(true);
-        GameObject enemy = objectManager.Get(4);
-        if(!poolObj.Contains(enemy)){
-            poolObj.Add(enemy);
-        }
-        enemy.transform.position = spawnPoints[20].position;
-        Rigidbody2D rigid = enemy.GetComponent<Rigidbody2D>();
-        EnemyMove enemyLogic = enemy.GetComponent<EnemyMove>();
-        Rigidbody2D playerRigid = playerMove.GetComponent<Rigidbody2D>();
-        enemyLogic.playerRigid = playerRigid;
-        enemyLogic.player = player;
-        enemyLogic.playerLogic = playerMove;
-        enemyLogic.objectManager = objectManager;
-        enemyLogic.gameManager = this;
-        cineCam.Follow = bossSquare.transform;
-        bossSquare.SetActive(true);
-        bossSquare.transform.position = playerMove.transform.position;
-        enemyCount++;
     }
 }

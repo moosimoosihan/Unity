@@ -74,38 +74,35 @@ public class PlayerObj : MonoBehaviour
     float poisonDamage;
 
 
+    // 오디오
+    AudioSource audioSource;
+
+
     void Start()
     {
-        // playerObjDead = false;
-        
-        switch(type){
-            case "Skull":
-                anim.runtimeAnimatorController = animCharacter[0];
-                spriteRenderer.sprite = sprites[0];
-            break;
-            case "BowSkull":
-                anim.runtimeAnimatorController = animCharacter[1];
-                spriteRenderer.sprite = sprites[1];
-            break;
+        if(type == "Skull"){
+            anim.runtimeAnimatorController = animCharacter[0];
+            spriteRenderer.sprite = sprites[0];
+        } else if(type== "BowSkull"){
+            anim.runtimeAnimatorController = animCharacter[1];
+            spriteRenderer.sprite = sprites[1];
         }
+        // playerObjDead = false;
         maxLife = life;
     }
     void OnEnable()
     {
         playerObjDead = false;
-
-        switch(type){
-            case "Lake":
-                Invoke("ActiveOff",15f);
-            break;
-            case "Turret":
-                life = 100f;
-                elementalType = "None";
-            break;
+        if(type=="Lake"){
+            Invoke("ActiveOff",15f);
+        } else if(type == "Turret"){
+            life = 100f;
+            elementalType = "None";
         }
     }
     void Awake()
     {
+        audioSource = GetComponent<AudioSource>();
         anim = GetComponent<Animator>();
         rigid = GetComponent<Rigidbody2D>();
         spriteRenderer = GetComponent<SpriteRenderer>();
@@ -116,6 +113,9 @@ public class PlayerObj : MonoBehaviour
 
     void FixedUpdate()
     {
+        if(playerObjDead)
+            return;
+
         if(type=="Bear" && gameObject.activeSelf){ // 곰 움직임 구현
             if(Vector3.Distance(transform.position, playerMove.transform.position)>3f){ // 플레이어와 거리가 멀다면 플레이어에게 다가가라
                 Vector2 direction1 = new Vector2(transform.position.x - GameManager.instance.playerMove.transform.position.x,transform.position.y - GameManager.instance.playerMove.transform.position.y);
@@ -145,7 +145,6 @@ public class PlayerObj : MonoBehaviour
             }
         } else if(type=="Skull" && gameObject.activeSelf){ // 스컬 움직임 구현
             if(Vector3.Distance(transform.position, playerMove.transform.position)>3f){ // 플레이어와 거리가 멀다면 플레이어에게 다가가라
-                anim.SetBool("IsAttack",false);
                 if(playerMove.transform.position.x < transform.position.x) { // 플레이어에게 갈때
                     spriteRenderer.flipX = false;
                 } else {
@@ -174,7 +173,6 @@ public class PlayerObj : MonoBehaviour
                         AttackTime -= Time.fixedDeltaTime;
                     }
                 } else {
-                    anim.SetBool("IsAttack",false);
                     Vector2 direction = new Vector2(transform.position.x - GameManager.instance.playerMove.targetImage.transform.position.x,transform.position.y - GameManager.instance.playerMove.targetImage.transform.position.y);
                     Vector2 nextVec = direction.normalized * Time.fixedDeltaTime * 1.5f * (iceSlow * freezStop * lightningStop); // 얼음 공격시 슬로우, 빙결, 쇼크시 멈춤
                     rigid.MovePosition(rigid.position - nextVec);
@@ -183,7 +181,6 @@ public class PlayerObj : MonoBehaviour
             }
         } else if(type=="BowSkull" && gameObject.activeSelf){ // 활 스컬 움직임 구현
             if(Vector3.Distance(transform.position, playerMove.transform.position)>3f){ // 플레이어와 거리가 멀다면 플레이어에게 다가가라
-                anim.SetBool("IsAttack",false);
                 if(playerMove.transform.position.x < transform.position.x) { // 플레이어에게 갈때
                     spriteRenderer.flipX = false;
                 } else {
@@ -195,7 +192,6 @@ public class PlayerObj : MonoBehaviour
                 rigid.velocity = Vector2.zero;
             } else {
                 if(Vector3.Distance(transform.position, playerMove.targetImage.transform.position)<=2f){// 스컬과 적군 사이가 가깝다면 멀리 떨어져라
-                    anim.SetBool("IsAttack",false);
                     if(playerMove.targetImage.transform.position.x > transform.position.x) { // 도망가기에 반대로
                         spriteRenderer.flipX = false;
                     } else {
@@ -300,7 +296,7 @@ public class PlayerObj : MonoBehaviour
                 playerMove.skullCount--;
             }
             if(type == "Turret"){ // 터렛의 경우 폭발 데미지
-                GameObject dieEffect = gameManager.objectManager.Get(58);
+                GameObject dieEffect = gameManager.objectManager.Get(54);
                 Effect dieEffectLogic = dieEffect.GetComponent<Effect>();
                 dieEffect.transform.position = transform.position;
                 dieEffectLogic.power = power;
@@ -310,9 +306,12 @@ public class PlayerObj : MonoBehaviour
     }
     public void Fire(bool maxLevel)
     {
+        if(playerObjDead)
+            return;
+
         if(type == "Turret"){ // 터렛 총알 공격
              if(maxLevel){ // 터렛 궁극기 화염 방사기
-                GameObject bullet = gameManager.objectManager.Get(60);
+                GameObject bullet = gameManager.objectManager.Get(56);
                 bullet.transform.position = transform.position;
                 Rigidbody2D rigid = bullet.GetComponent<Rigidbody2D>();
                 Bullet bulletLogic = bullet.GetComponent<Bullet>();
@@ -322,7 +321,7 @@ public class PlayerObj : MonoBehaviour
                 Vector3 dirVec = gameManager.playerMove.targetImage.transform.position - transform.position;
                 rigid.AddForce(dirVec.normalized * gameManager.playerMove.bulletSpeed/2, ForceMode2D.Impulse);
             } else {
-                GameObject bullet = gameManager.objectManager.Get(26);
+                GameObject bullet = gameManager.objectManager.Get(22);
                 bullet.transform.position = transform.position;
                 Rigidbody2D rigid = bullet.GetComponent<Rigidbody2D>();
                 Bullet bulletLogic = bullet.GetComponent<Bullet>();
@@ -337,7 +336,7 @@ public class PlayerObj : MonoBehaviour
                 bulletLogic.turretBullet = true;
             }
         } else if(type == "Bear"){ // 곰 공격
-            GameObject bullet = gameManager.objectManager.Get(42);
+            GameObject bullet = gameManager.objectManager.Get(38);
             Bullet bulletLogic = bullet.GetComponent<Bullet>();
             bulletLogic.power = power;
             
@@ -352,8 +351,8 @@ public class PlayerObj : MonoBehaviour
                 bulletPointer.forceMagnitude = 100;
             }
         } else if(type == "Skull"){ // 스컬 공격
-            anim.SetBool("IsAttack",true);
-            GameObject bullet = gameManager.objectManager.Get(45);
+            anim.SetTrigger("IsAttack");
+            GameObject bullet = gameManager.objectManager.Get(41);
             Bullet bulletLogic = bullet.GetComponent<Bullet>();
             bulletLogic.power = power;
             bulletLogic.elementalType = "None";
@@ -361,8 +360,8 @@ public class PlayerObj : MonoBehaviour
             Vector3 dirVec = GameManager.instance.playerMove.targetImage.transform.position - transform.position;
             bullet.transform.position = transform.position + dirVec.normalized * 0.5f;
         } else if(type == "BowSkull"){ // 활 스컬 공격
-            anim.SetBool("IsAttack",true);
-            GameObject bullet = gameManager.objectManager.Get(44);
+            anim.SetTrigger("IsAttack");
+            GameObject bullet = gameManager.objectManager.Get(40);
             Rigidbody2D rigid = bullet.GetComponent<Rigidbody2D>();
             Bullet bulletLogic = bullet.GetComponent<Bullet>();
             bulletLogic.power = power;
@@ -376,7 +375,7 @@ public class PlayerObj : MonoBehaviour
             rigid.AddForce(dirVec.normalized * playerMove.bulletSpeed, ForceMode2D.Impulse);
         } else if(type == "IceGolem"){
             if(maxLevel){
-                GameObject bullet = gameManager.objectManager.Get(18);
+                GameObject bullet = gameManager.objectManager.Get(14);
                 Bullet bulletLogic = bullet.GetComponent<Bullet>();
                 Rigidbody2D rigid = bullet.GetComponent<Rigidbody2D>();
                 bullet.transform.position = transform.position;
@@ -391,7 +390,7 @@ public class PlayerObj : MonoBehaviour
                 bullet.transform.position = transform.position;
                 rigid.AddForce(dirVec.normalized * GameManager.instance.playerMove.bulletSpeed, ForceMode2D.Impulse);
             } else {
-                GameObject bullet = gameManager.objectManager.Get(45);
+                GameObject bullet = gameManager.objectManager.Get(41);
                 Bullet bulletLogic = bullet.GetComponent<Bullet>();
                 bulletLogic.power = power;
                 bulletLogic.elementalType = "Ice";
@@ -401,7 +400,7 @@ public class PlayerObj : MonoBehaviour
             }
         } else if(type == "FireGolem"){
             if(maxLevel){
-                GameObject bullet = gameManager.objectManager.Get(22);
+                GameObject bullet = gameManager.objectManager.Get(18);
                 Bullet bulletLogic = bullet.GetComponent<Bullet>();
                 Rigidbody2D rigid = bullet.GetComponent<Rigidbody2D>();
                 bullet.transform.position = transform.position;
@@ -411,7 +410,7 @@ public class PlayerObj : MonoBehaviour
                 Vector3 dirVec = GameManager.instance.playerMove.targetImage.transform.position - transform.position;
                 rigid.AddForce(dirVec.normalized * GameManager.instance.playerMove.bulletSpeed/2, ForceMode2D.Impulse);
             } else {
-                GameObject bullet = gameManager.objectManager.Get(45);
+                GameObject bullet = gameManager.objectManager.Get(41);
                 Bullet bulletLogic = bullet.GetComponent<Bullet>();
                 bulletLogic.power = power;
                 bulletLogic.elementalType = "Fire";
@@ -421,7 +420,7 @@ public class PlayerObj : MonoBehaviour
             }
         } else if(type == "StoneGolem"){
             if(maxLevel){
-                GameObject bullet = gameManager.objectManager.Get(17);
+                GameObject bullet = gameManager.objectManager.Get(13);
                 Bullet bulletLogic = bullet.GetComponent<Bullet>();
                 Rigidbody2D rigid = bullet.GetComponent<Rigidbody2D>();
                 bullet.transform.position = transform.position;
@@ -433,7 +432,7 @@ public class PlayerObj : MonoBehaviour
                 Vector3 dirVec = playerMove.targetImage.transform.position - transform.position;
                 rigid.AddForce(dirVec.normalized * playerMove.bulletSpeed, ForceMode2D.Impulse);
             } else {
-                GameObject bullet = gameManager.objectManager.Get(45);
+                GameObject bullet = gameManager.objectManager.Get(41);
                 Bullet bulletLogic = bullet.GetComponent<Bullet>();
                 bulletLogic.power = power;
                 bulletLogic.elementalType = "Stone";
@@ -445,7 +444,7 @@ public class PlayerObj : MonoBehaviour
             if(maxLevel){
                 if(!isMaxOn){
                     isMaxOn = true;
-                    GameObject bullet = gameManager.objectManager.Get(24);
+                    GameObject bullet = gameManager.objectManager.Get(20);
                     Bullet bulletLogic = bullet.GetComponent<Bullet>();
                     Rigidbody2D rigid = bullet.GetComponent<Rigidbody2D>();
                     bulletLogic.power = power;
@@ -455,7 +454,7 @@ public class PlayerObj : MonoBehaviour
                     bullet.transform.localScale = new Vector3(0.4f,0.4f,0);
                 }
             } else {
-                GameObject bullet = gameManager.objectManager.Get(45);
+                GameObject bullet = gameManager.objectManager.Get(41);
                 Bullet bulletLogic = bullet.GetComponent<Bullet>();
                 bulletLogic.power = power;
                 bulletLogic.elementalType = "Water";
@@ -465,7 +464,7 @@ public class PlayerObj : MonoBehaviour
             }
         } else if(type == "LightningGolem"){
             if(maxLevel){
-                GameObject bullet = gameManager.objectManager.Get(23);
+                GameObject bullet = gameManager.objectManager.Get(19);
                 Bullet bulletLogic = bullet.GetComponent<Bullet>();
                 Rigidbody2D rigid = bullet.GetComponent<Rigidbody2D>();
                 bulletLogic.power = power;
@@ -473,7 +472,7 @@ public class PlayerObj : MonoBehaviour
                 Vector3 dirVec = new Vector3(GameManager.instance.playerMove.targetImage.transform.position.x,GameManager.instance.playerMove.targetImage.transform.position.y+2.65f,0);
                 bullet.transform.position = dirVec;
             } else {
-                GameObject bullet = gameManager.objectManager.Get(45);
+                GameObject bullet = gameManager.objectManager.Get(41);
                 Bullet bulletLogic = bullet.GetComponent<Bullet>();
                 bulletLogic.power = power;
                 bulletLogic.elementalType = "Lightning";
@@ -482,7 +481,7 @@ public class PlayerObj : MonoBehaviour
                 bullet.transform.position = transform.position + dirVec.normalized * 0.5f;
             }
         } else if(type == "Lake"){
-            GameObject bullet = gameManager.objectManager.Get(45);
+            GameObject bullet = gameManager.objectManager.Get(41);
             Bullet bulletLogic = bullet.GetComponent<Bullet>();
             bulletLogic.power = power;
             bulletLogic.elementalType = "Water";
@@ -572,6 +571,13 @@ public class PlayerObj : MonoBehaviour
     //플레이어 오브젝트 데미지
     void PlayerObjDamaged(GameObject target, string type)
     {
+        if(playerObjDead)
+            return;
+
+        audioSource.clip = gameManager.audioManager.hit0Auido;
+        if(!audioSource.isPlaying){
+            gameManager.audioManager.PlayOneShotSound(audioSource, audioSource.clip, audioSource.volume);
+        }
         if(type == "Enemy"){
             EnemyMove enemyLogic = target.GetComponent<EnemyMove>();
             float dmg = enemyLogic.CriticalHit(enemyLogic.power);
@@ -653,6 +659,13 @@ public class PlayerObj : MonoBehaviour
     }
     void Healing(float healValue)
     {        
+        if(playerObjDead)
+            return;
+        
+        audioSource.clip = gameManager.audioManager.healingAudio;
+        if(!audioSource.isPlaying){
+            gameManager.audioManager.PlayOneShotSound(audioSource, audioSource.clip, audioSource.volume);
+        }
         if(life+healValue>maxLife){
             gameManager.DamageText(transform.position, maxLife - life, "Healing", false);
             life = maxLife;
@@ -711,7 +724,7 @@ public class PlayerObj : MonoBehaviour
     //과부화 함수
     public void isOverload(string type)
     {
-        GameObject overload = gameManager.objectManager.Get(59);
+        GameObject overload = gameManager.objectManager.Get(55);
         Effect overloadLogic = overload.GetComponent<Effect>();
         overload.gameObject.transform.position = transform.position;
         overloadLogic.power = lightningDamage + fireDamage;

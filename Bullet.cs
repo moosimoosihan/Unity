@@ -34,11 +34,16 @@ public class Bullet : MonoBehaviour
     Animator anim;
     public bool turretBullet;
     public GameObject playerObjPos;
+    public GameManager gameManager;
 
     public Vector2 attack2Vec;
+
+    AudioSource audioSource;
     
     void Awake()
     {
+        gameManager = GameManager.instance;
+        audioSource = GetComponent<AudioSource>();
         pointEffector2D = GetComponent<PointEffector2D>();
         anim = GetComponent<Animator>();
         particle = GetComponent<ParticleSystem>();
@@ -49,6 +54,11 @@ public class Bullet : MonoBehaviour
     }
     void OnEnable()
     {
+        if(audioSource.clip != null){
+            if(!audioSource.isPlaying){
+                gameManager.audioManager.PlayOneShotSound(audioSource, audioSource.clip, audioSource.volume);
+            }
+        }
         enemyForeceMax = false;
         deg = 0;
         if(weaponType == 6){ // 윈드포스의 경우
@@ -108,13 +118,13 @@ public class Bullet : MonoBehaviour
                     bulletSpeed = 200f;
                     transform.RotateAround(playerTransform.position, Vector3.forward, Time.deltaTime * bulletSpeed);
                     float weapon2CurPower = 50;
-                    float weapon2Power = weapon2CurPower * GameManager.instance.playerMove.power * GameManager.instance.playerMove.weaponLevel[5];
+                    float weapon2Power = (weapon2CurPower + GameManager.instance.playerMove.plusPower) * GameManager.instance.playerMove.power * GameManager.instance.playerMove.weaponLevel[5];
                     power = weapon2Power;
                 } else {
                     bulletSpeed = 100f;
                     transform.RotateAround(playerTransform.position, Vector3.forward, Time.deltaTime * bulletSpeed);
                     float weapon2CurPower = 50;
-                    float weapon2Power = weapon2CurPower * GameManager.instance.playerMove.power * GameManager.instance.playerMove.weaponLevel[5];
+                    float weapon2Power = (weapon2CurPower + GameManager.instance.playerMove.plusPower) * GameManager.instance.playerMove.power * GameManager.instance.playerMove.weaponLevel[5];
                     power = weapon2Power;
                     weapon2Time -= Time.deltaTime;
                     if(weapon2Time <= 0){
@@ -133,7 +143,7 @@ public class Bullet : MonoBehaviour
                 gameObject.SetActive(playerObjLogic.isMaxOn);
             } else {
                 float weapon10CurPower = 30;
-                float weapon10Power = weapon10CurPower * GameManager.instance.playerMove.power * GameManager.instance.playerMove.weaponLevel[4];
+                float weapon10Power = (weapon10CurPower + GameManager.instance.playerMove.plusPower) * GameManager.instance.playerMove.power * GameManager.instance.playerMove.weaponLevel[4];
                 power = weapon10Power;
                 float weapon10Speed = 100f;
                 Vector3 weapon10Rotate = new Vector3(0,0,Time.deltaTime*weapon10Speed);
@@ -149,12 +159,12 @@ public class Bullet : MonoBehaviour
             bulletSpeed = 150f;
             transform.RotateAround(playerTransform.position, Vector3.forward, Time.deltaTime * bulletSpeed);
             float weaponTyphoonCurPower = 200;
-            float weaponTyphoonPower = weaponTyphoonCurPower * GameManager.instance.playerMove.power;
+            float weaponTyphoonPower = (weaponTyphoonCurPower + GameManager.instance.playerMove.plusPower) * GameManager.instance.playerMove.power;
             power = weaponTyphoonPower;
         } else if(weaponType == 15 && gameObject.activeSelf){ // 가시갑옷
             float weapon15CurPower = 30;
             float weapon15PlusPower = GameManager.instance.playerMove.enemyClearNum/10;
-            power = (weapon15CurPower * GameManager.instance.playerMove.power * GameManager.instance.playerMove.weaponLevel[0]) + weapon15PlusPower;
+            power = ((weapon15CurPower + GameManager.instance.playerMove.plusPower) * GameManager.instance.playerMove.power * GameManager.instance.playerMove.weaponLevel[0]) + weapon15PlusPower;
         } else if (weaponType == 16 && gameObject.activeSelf){ // 돌아가는 망치
             if(maxLevel){
                 deg += Time.deltaTime;
@@ -179,7 +189,7 @@ public class Bullet : MonoBehaviour
 
             energyForceTime -= Time.deltaTime;
             if(energyForceTime<=0){
-                GameObject bullet = objectManager.Get(22);
+                GameObject bullet = objectManager.Get(18);
                 Bullet bulletLogic = bullet.GetComponent<Bullet>();
                 bulletLogic.power = power/2;
                 Vector3 ranVec = new Vector3(Random.Range(0.5f,3.5f),Random.Range(-1.5f,-2.5f),0);
@@ -198,7 +208,7 @@ public class Bullet : MonoBehaviour
         }
     }
 
-    private void OnTriggerEnter2D(Collider2D other)
+    void OnTriggerEnter2D(Collider2D other)
     {
         //총알이 끝에 닿으면 총알 삭제
         if(other.gameObject.tag == "BorderBullet") {
@@ -278,7 +288,7 @@ public class Bullet : MonoBehaviour
                 if(weaponType == 3){ // 아이스 붐이 적군이랑 만났을 경우
                     if(maxLevel){
                         for (int i =0;i<10;i++){
-                            GameObject bullet = objectManager.Get(18);
+                            GameObject bullet = objectManager.Get(14);
                             bullet.transform.position = transform.position;
                             Bullet bulletLogic = bullet.GetComponent<Bullet>();
                             Rigidbody2D rigid = bullet.GetComponent<Rigidbody2D>();
@@ -301,7 +311,7 @@ public class Bullet : MonoBehaviour
                     TrapOn();
                 }
             } else if(weaponType == 11 && turretBullet){ // 터렛이 쏜 총알 일 경우
-                GameObject dieEffect = GameManager.instance.objectManager.Get(58);
+                GameObject dieEffect = GameManager.instance.objectManager.Get(54);
                 Effect dieEffectLogic = dieEffect.GetComponent<Effect>();
                 dieEffect.transform.position = transform.position;
                 dieEffectLogic.power = power;
@@ -328,9 +338,10 @@ public class Bullet : MonoBehaviour
     void MeteoAttack()
     {
         for(int i = 0;i<5;i++){
-            GameObject bullet = objectManager.Get(22);
+            GameObject bullet = objectManager.Get(18);
             Bullet bulletLogic = bullet.GetComponent<Bullet>();
             bulletLogic.power = power/2;
+            bulletLogic.matchCount += 5;
             Vector3 ranVec = new Vector3(Random.Range(0.5f,3.5f),Random.Range(-1.5f,-2.5f),0);
             bullet.transform.position = transform.position + ranVec;
         }

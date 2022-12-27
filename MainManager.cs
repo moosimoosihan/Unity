@@ -9,7 +9,6 @@ public class MainManager : MonoBehaviour
 {
     public string language;
     public int stage = 1;
-    int gold;
     public int grobalGold;
     public int clearStage = 1;
     public int maxstage;
@@ -43,6 +42,10 @@ public class MainManager : MonoBehaviour
     public Text helpExText;
     public GameObject helpPanel;
     public GameObject inventoryPanel;
+    public GameObject creatorInfoPannel;
+    public Text[] creatorText;
+    public Text characterBuyButtonText;
+    public GameObject characterBuyButton;
 
     //인벤토리 함수
     public Image[] slutImage;
@@ -54,8 +57,15 @@ public class MainManager : MonoBehaviour
     string curItem; // 현재 보고있는 아이템
 
     // 스탯 레벨
-    int stateLevel;
+    int stateLevelAtttack;
+    int stateLevelLife;
+    int stateLevelSpeed;
     public Text[] stateLevelButtonTexts;
+
+    // 캐릭터 버튼
+    public Image[] characterButtonImage;
+    string[] exBuyText;
+    int characterBuyNum;
 
     //광고
     //private BannerView bannerView;
@@ -68,51 +78,52 @@ public class MainManager : MonoBehaviour
         //RequestBanner();
         
         language = "English";
-        character = "Wizard";
+        character = "Hunter";
         characterNum = 0;
         clearStage = 1;
         grobalGold = 0;
-        stateLevel = 0;
+        stateLevelAtttack = 0;
+        stateLevelLife = 0;
+        stateLevelSpeed = 0;
         if (PlayerPrefs.HasKey("GrobalGold")){ // 골드가 저장된게 있다면
             grobalGold = PlayerPrefs.GetInt("GrobalGold");
-        }else
-        {
+        } else {
             PlayerPrefs.SetInt("GrobalGold", grobalGold);
         }
         if(PlayerPrefs.HasKey("Character")){ // 저장된 케릭터가 있다면
             character = PlayerPrefs.GetString("Character");
-        }
-        else
-        {
+        } else {
             PlayerPrefs.SetString("Character", character);
         }
         if (PlayerPrefs.HasKey("CharacterNum")){ // 저장된 케릭터가 있다면
             characterNum = PlayerPrefs.GetInt("CharacterNum");
-        }
-        else
-        {
+        } else {
             PlayerPrefs.SetInt("CharacterNum", characterNum);
         }
         if (PlayerPrefs.HasKey("Language")){ // 저장된 언어가 있다면
             language = PlayerPrefs.GetString("Language");
-        }
-        else
-        {
+        } else {
             PlayerPrefs.SetString("Language", language);
         }
         if (PlayerPrefs.HasKey("ClearStage")){ // 저장된 클리어 스테이지 수 가 있다면
             clearStage = PlayerPrefs.GetInt("ClearStage");
-        }
-        else
-        {
+        } else {
             PlayerPrefs.SetInt("ClearStage", clearStage);
         }
-        if (PlayerPrefs.HasKey("StateLevel")){ // 스탯 저장된 내용이 있다면
-            stateLevel = PlayerPrefs.GetInt("StateLevel");
+        if (PlayerPrefs.HasKey("StateLevelAtttack")){ // 공격 스탯 저장된 내용이 있다면
+            stateLevelAtttack = PlayerPrefs.GetInt("StateLevelAtttack");
+        } else {
+            PlayerPrefs.SetInt("StateLevelAtttack", stateLevelAtttack);
         }
-        else
-        {
-            PlayerPrefs.SetInt("StateLevel", stateLevel);
+        if (PlayerPrefs.HasKey("StateLevelLife")){ // 체력 스탯 저장된 내용이 있다면
+            stateLevelLife = PlayerPrefs.GetInt("StateLevelLife");
+        } else {
+            PlayerPrefs.SetInt("StateLevelLife", stateLevelLife);
+        }
+        if (PlayerPrefs.HasKey("StateLevelSpeed")){ // 이동 속도 스탯 저장된 내용이 있다면
+            stateLevelSpeed = PlayerPrefs.GetInt("StateLevelSpeed");
+        } else {
+            PlayerPrefs.SetInt("StateLevelSpeed", stateLevelSpeed);
         }
 
         stage = clearStage;
@@ -127,13 +138,21 @@ public class MainManager : MonoBehaviour
             korButtonText.text = "Korean";
             characterButtonText.text = "Character";
             inventoryButtonText.text = "Inventory";
-            stateLevelButtonText.text = "Level";
+            stateLevelButtonText.text = "State\nLevel";
+            characterBuyButtonText.text = "Buy";
             characterText.text = "Character";
-            exText = new string[]{"Wizard\nCovers fire, wind, ice, water, and lightning elements that can\ndiffuse, superconduct, superconduct, melt, evaporate, or freeze.",
-                                    "Hunter1\nDoubles all HP recovery.\nUse high-damage physical attacks.",
-                                    "Hunter2\nStart with double your health.\nDirectly collide with the enemy and fight back.",
-                                    "Hunter3\nMovement speed is 20% faster.\nThrows all throwable objects at enemies.",
-                                    "Hunter4\nDamage is increased double.\nSummons allies to fight."};
+            creatorText[0].text = "Creator";
+            creatorText[1].text = "Creator";
+            creatorText[2].text = "Developer : CreapySmoothie\nDesign : pandayu\nOriginal : Gold Metal Studio";
+            exBuyText = new string[]{"Paladin\n1,000 Gold",
+                                    "Vagabond\n5,000 Gold",
+                                    "Zookeeper\n10,000 Gold",
+                                    "Wizard\n50,000 Gold"};
+            exText = new string[]{"Hunter\nDoubles all HP recovery.\nUse high-damage physical attacks.",
+                                    "Paladin\nStart with double your health.\nDirectly collide with the enemy and fight back.",
+                                    "Vagabond\nMovement speed is 20% faster.\nThrows all throwable objects at enemies.",
+                                    "Zookeeper\nDamage is increased double.\nSummons allies to fight.",
+                                    "Wizard\nUse magic",};
             helpExText.text = "Wizards can use magic in various combinations.\nDamage varies depending on the combination of elements.\nElement Combination Table\nWind + Element = Spread\nYou will be hit once more by the damage of the currently attached element. .\nLightning + Fire = Overload\nAn explosion occurs, knocking back nearby enemies and dealing damage.\nLightning + Ice = Superconductivity\nDefense by 1.5x.\nIce + Water = Freezing\nEnemies are frozen. However, if you are hit with another element (fire, lightning, stone), the ice will break.\nWater + Electricity = Electrocution\nYou take damage per second and stop moving for a while.\nWater + Fire = Evaporation\n1.5 Takes double damage.\nFire + Ice = Melting\nInflicts 1.5 times the damage.\nWater = Enemies get wet.\nFire = Deals 100% damage per second to enemies. .\nIce = slows down the movement speed of enemy characters.\nElectricity = deals 50% damage per second to enemy characters.\nWind = pushes back enemies.\nStone = pushes back enemies and gives a certain chance of a shield item creates.\nLight = Recovers HP by a certain amount of damage.\n\nHunter\nCan deal physical damage.\nEach character has unique stats.";
         } else if(language == "Korean"){
             helpText[0].text = "도움";
@@ -145,13 +164,21 @@ public class MainManager : MonoBehaviour
             korButtonText.text = "한국어";
             characterButtonText.text = "캐릭터";
             inventoryButtonText.text = "장비";
-            stateLevelButtonText.text = "레벨";
+            stateLevelButtonText.text = "능력치\n레벨";
+            characterBuyButtonText.text = "구입";
             characterText.text = "캐릭터";
-            exText = new string[]{"마법사\n마법을 사용합니다..",
-                                    "헌터1\n모든 체력회복을 2배로 회복합니다.\n데미지가 높은 물리적인 공격을 사용합니다.",
-                                    "헌터2\n체력을 2배로 시작합니다.\n직접 적군과 부딪히며 맞서 싸웁니다.",
-                                    "헌터3\n이동속도가 20% 더 빠릅니다.\n적군에게 던질 수 있는 모든 물체를 던집니다.",
-                                    "헌터4\n데미지가 2배로 증가합니다.\n아군을 소환하여 싸웁니다."};
+            creatorText[0].text = "만든이";
+            creatorText[1].text = "만든이";
+            creatorText[2].text = "개발자 : 무시무시한스무디\n디자인 : pandayu\n원작 : 골드메탈 스튜디오";
+            exBuyText = new string[]{"성기사\n1,000 골드",
+                                    "방랑자\n5,000 골드",
+                                    "사육사\n10,000 골드",
+                                    "마법사\n50,000 골드"};
+            exText = new string[]{"헌터\n모든 체력회복을 2배로 회복합니다.\n데미지가 높은 물리적인 공격을 사용합니다.",
+                                    "성기사\n체력을 2배로 시작합니다.\n직접 적군과 부딪히며 맞서 싸웁니다.",
+                                    "방랑자\n이동속도가 20% 더 빠릅니다.\n적군에게 던질 수 있는 모든 물체를 던집니다.",
+                                    "사육사\n데미지가 2배로 증가합니다.\n아군을 소환하여 싸웁니다.",
+                                    "마법사\n마법을 사용합니다.."};
             helpExText.text = "원소 조합 따라 변화 데미지가 일어납니다.\n원소조합표\n바람 + 원소 = 확산\n현재 붙어있는 원소의 데미지로 한번 더 피격됩니다.\n번개 + 불 = 과부화\n폭발이 일어나 주변 적군을 밀치고 데미지를 줍니다.\n번개 + 얼음 = 초전도\n데미지를 1.5배 줍니다.\n얼음 + 물 = 빙결\n적군이 얼어붙습니다. 하지만 다른 원소(불, 번개, 돌)로 피격시 빙결이 풀려버립니다.\n물 + 전기 = 감전\n초당 데미지를 입고 잠시 이동을 멈춥니다.\n물 + 불 = 증발\n1.5배의 데미지가 들어갑니다.\n불 + 얼음 = 융해\n1.5배의 데미지가 들어갑니다.\n물 = 적군 캐릭터가 축축하게 젖습니다.\n불 = 적군에게 초당 100% 데미지를 입힙니다.\n얼음 = 적군 캐릭터의 이동속도가 느려집니다.\n전기 = 적군 캐릭터에게 초당 50% 데미지를 입힙니다.\n바람 = 적군을 밀어냅니다.\n돌 = 적군을 밀치고 특정 확률로 방어막 아이템을 생성합니다.\n빛 = 일정 데미지 만큼 체력을 회복합니다.\n\n캐릭터마다 고유 능력치가 있습니다.";
         }
     }
@@ -177,6 +204,7 @@ public class MainManager : MonoBehaviour
 
         //UI
         goldText.text = grobalGold.ToString();
+
         if(language == "English"){
             stageText.text = "Stage " + stage;
         } else if(language == "Korean"){
@@ -236,12 +264,14 @@ public class MainManager : MonoBehaviour
         stateLevelPanel.SetActive(false);
         helpPanel.SetActive(false);
         inventoryPanel.SetActive(false);
+        creatorInfoPannel.SetActive(false);
     }
     public void CharacterPanelButton()
     {
         characterPanel.SetActive(true);
         character = PlayerPrefs.GetString("Character");
         characterNum = PlayerPrefs.GetInt("CharacterNum");
+        characterBuyButton.SetActive(false);
         for(int i=0;i<characterSelectButtonImage.Length;i++){ // 선택된 버튼을 제외한 나머지는 하얀색
             if(i==characterNum){
                 characterSelectButtonImage[i].sprite = buttonSprite[0];
@@ -250,41 +280,173 @@ public class MainManager : MonoBehaviour
                 characterSelectButtonImage[i].sprite = buttonSprite[1];
             }
         }
+        if(PlayerPrefs.HasKey("Hunter2")){
+            characterButtonImage[1].color = new Color(1,1,1);
+        } else {
+            characterButtonImage[1].color = new Color(0,0,0);
+        }
+        if(PlayerPrefs.HasKey("Hunter3")){
+            characterButtonImage[2].color = new Color(1,1,1);
+        } else {
+            characterButtonImage[2].color = new Color(0,0,0);
+        }
+        if(PlayerPrefs.HasKey("Hunter4")){
+            characterButtonImage[3].color = new Color(1,1,1);
+        } else {
+            characterButtonImage[3].color = new Color(0,0,0);
+        }
+        if(PlayerPrefs.HasKey("Wizard")){
+            characterButtonImage[4].color = new Color(1,1,1);
+        } else {
+            characterButtonImage[4].color = new Color(0,0,0);
+        }
     }
     public void CharacterSelectButtonNum(int btnNum)
     {
-        PlayerPrefs.SetInt("CharacterNum",btnNum);
-        PlayerPrefs.Save();
+        characterBuyNum = btnNum;
+        if(btnNum==0){ // 헌터
+            PlayerPrefs.SetInt("CharacterNum",btnNum);
+            PlayerPrefs.SetString("Character","Hunter");
+            PlayerPrefs.Save();
+            CharacterButtonImageSetUp(btnNum, true);
+        } else if(btnNum==1){ // 헌터2
+            if(PlayerPrefs.HasKey("Hunter2")){
+                PlayerPrefs.SetInt("CharacterNum",btnNum);
+                PlayerPrefs.SetString("Character","Hunter2");
+                PlayerPrefs.Save();
+                CharacterButtonImageSetUp(btnNum, true);
+            } else {
+                characterBuyButton.SetActive(true);
+                CharacterButtonImageSetUp(btnNum, false);
+            }
+        } else if(btnNum==2){ // 헌터3
+            if(PlayerPrefs.HasKey("Hunter3")){
+                PlayerPrefs.SetInt("CharacterNum",btnNum);
+                PlayerPrefs.SetString("Character","Hunter3");
+                PlayerPrefs.Save();
+                CharacterButtonImageSetUp(btnNum, true);
+            } else {
+                characterBuyButton.SetActive(true);
+                CharacterButtonImageSetUp(btnNum, false);
+            }
+        } else if(btnNum==3){ // 헌터4
+            if(PlayerPrefs.HasKey("Hunter4")){
+                PlayerPrefs.SetInt("CharacterNum",btnNum);
+                PlayerPrefs.SetString("Character","Hunter4");
+                PlayerPrefs.Save();
+                CharacterButtonImageSetUp(btnNum, true);
+            } else {
+                characterBuyButton.SetActive(true);
+                CharacterButtonImageSetUp(btnNum, false);
+            }
+        } else if(btnNum==4){ // 위자드
+            if(PlayerPrefs.HasKey("Wizard")){
+                PlayerPrefs.SetInt("CharacterNum",btnNum);
+                PlayerPrefs.SetString("Character","Wizard");
+                PlayerPrefs.Save();
+                CharacterButtonImageSetUp(btnNum, true);
+            } else {
+                characterBuyButton.SetActive(true);
+                CharacterButtonImageSetUp(btnNum, false);
+            }
+        }
+    }
+    void CharacterButtonImageSetUp(int btnNum, bool isHere)
+    {
         for(int i=0;i<characterSelectButtonImage.Length;i++){ // 선택된 버튼을 제외한 나머지는 하얀색
-            if(i==btnNum){
+            if(i == btnNum){
                 characterSelectButtonImage[i].sprite = buttonSprite[0];
-                characterExText.text = exText[i];
+                if(i==0 || isHere){
+                    characterExText.text = exText[i];
+                    characterBuyButton.SetActive(false);
+                } else {
+                    characterExText.text = exBuyText[i-1];
+                }
             } else {
                 characterSelectButtonImage[i].sprite = buttonSprite[1];
             }
         }
     }
-    public void CharacterSelectButton(string character)
-    {
-        PlayerPrefs.SetString("Character",character);
-        PlayerPrefs.Save();
-    }
     public void StateLevelPanelButton()
     {
-        toastTextObj.SetActive(true);
-        if (language == "English")
-        {
-            toastText.text = "Not yet...";
-        }
-        else if (language == "Korean")
-        {
-            toastText.text = "업데이트 중입니다..";
-        }
-
         // 해당 레벨을 불러와 그만큼 버튼을 활성화 시켜야 함 레벨마다 가격이 달라짐!
 
-        //stateLevelPanel.SetActive(true);
-
+        stateLevelPanel.SetActive(true);
+        // 공격력 무한으로 증가 가능 레벨당 10 증가 레벨 * 10원
+        // 체력 무한으로 증가 가능 레벨당 50 증가 레벨 * 10원
+        // 스피드 10레벨 만렙 레벨당 0.1포인트 증가 레벨 * 1,000원
+        if(language == "English"){
+            stateLevelButtonTexts[0].text = "Attack Lv " + (stateLevelAtttack + 1) +"\n" + "Attack + " + (stateLevelAtttack + 1)*10 + "\n" + (stateLevelAtttack + 1)*10 + "Glod";
+            stateLevelButtonTexts[1].text = "Life Lv " + (stateLevelLife + 1) +"\n" + "Life + " + (stateLevelLife + 1)*50 + "\n" + (stateLevelLife + 1)*10 + "Glod";
+            if(stateLevelSpeed == 10){
+                stateLevelButtonTexts[2].text = "Speed Lv Max";
+            } else {
+                stateLevelButtonTexts[2].text = "Speed Lv " + (stateLevelSpeed + 1) +"\n" + "Speed + " + (stateLevelSpeed + 1)*5 + "%" + "\n" + (stateLevelSpeed + 1)*1000 + "Glod";
+            }
+        } else if(language == "Korean") {
+            stateLevelButtonTexts[0].text = "공격력 레벨 " + (stateLevelAtttack + 1) +"\n" + "공격력 + " + (stateLevelAtttack + 1)*10 + "\n" + (stateLevelAtttack + 1)*10 + "골드";
+            stateLevelButtonTexts[1].text = "체력 레벨 " + (stateLevelLife + 1) + "\n" + "체력 + " + (stateLevelLife + 1)*50 + "\n" + (stateLevelLife + 1)*10 + "골드";
+            if(stateLevelSpeed == 10){
+                stateLevelButtonTexts[2].text = "이동속도 최대 레벨";
+            } else {
+                stateLevelButtonTexts[2].text = "이동속도 레벨 " + (stateLevelSpeed + 1) +"\n" + "이동속도 + " + (stateLevelSpeed + 1)*5 + "%" + "\n" + (stateLevelSpeed + 1)*1000 + "골드";
+            }
+        }
+    }
+    public void StateButton(int num)
+    {
+        if(num == 1){ // 공격력
+            if(grobalGold >= (stateLevelAtttack + 1)*10){
+                grobalGold -= (stateLevelAtttack + 1)*10;
+                stateLevelAtttack++;
+                PlayerPrefs.SetInt("StateLevelAtttack", stateLevelAtttack);
+                PlayerPrefs.SetInt("GrobalGold", grobalGold);
+                PlayerPrefs.Save();
+                StateLevelPanelButton();
+            } else {
+                GoldLess();
+            }
+        } else if(num == 2){ // 체력
+            if(grobalGold >= (stateLevelLife + 1)*10){
+                grobalGold -= (stateLevelLife + 1)*10;
+                stateLevelLife++;
+                PlayerPrefs.SetInt("StateLevelLife", stateLevelLife);
+                PlayerPrefs.SetInt("GrobalGold", grobalGold);
+                PlayerPrefs.Save();
+                StateLevelPanelButton();
+            } else {
+                GoldLess();
+            }
+        } else if(num == 3){ // 이동 속도
+            if(stateLevelSpeed==10){
+                toastTextObj.SetActive(true);
+                if (language == "English") {
+                    toastText.text = "This is the maximum level.";
+                } else if (language == "Korean") {
+                    toastText.text = "최대 레벨 입니다.";
+                }
+                return;
+            }
+            if(grobalGold >= (stateLevelSpeed + 1)*1000){
+                grobalGold -= (stateLevelSpeed + 1)*1000;
+                stateLevelSpeed++;
+                PlayerPrefs.SetInt("StateLevelSpeed", stateLevelSpeed);
+                PlayerPrefs.SetInt("GrobalGold", grobalGold);
+                PlayerPrefs.Save();
+                StateLevelPanelButton();
+            } else {
+                GoldLess();
+            }
+        }
+    }
+    void GoldLess()
+    {
+        toastTextObj.SetActive(true);
+        if (language == "English") {
+            toastText.text = "Gold not enough.";
+        } else if (language == "Korean") {
+            toastText.text = "골드가 부족합니다.";
+        }
     }
     public void HelpButton()
     {
@@ -410,4 +572,52 @@ public class MainManager : MonoBehaviour
         // Load the banner with the request.
         bannerView.LoadAd(request);
     }*/
+    public void CreatorButton()
+    {
+        creatorInfoPannel.SetActive(true);
+    }
+    public void BuyButton()
+    {
+        if(characterBuyNum==1){ // 성기사 1,000골드  
+            if(grobalGold >= 1000){
+                grobalGold -= 1000;
+                PlayerPrefs.SetInt("GrobalGold", grobalGold);
+                PlayerPrefs.SetString("Hunter2", "Hunter2");
+                CharacterPanelButton();
+                PlayerPrefs.Save();
+            } else {
+                GoldLess();
+            }
+        } else if(characterBuyNum==2){ // 방랑자 5,000 골드
+            if(grobalGold >= 5000){
+                grobalGold -= 5000;
+                PlayerPrefs.SetInt("GrobalGold", grobalGold);
+                PlayerPrefs.SetString("Hunter3", "Hunter3");
+                CharacterPanelButton();
+                PlayerPrefs.Save();
+            } else {
+                GoldLess();
+            }
+        } else if(characterBuyNum==3){ // 사육사 10,000 골드
+            if(grobalGold >= 10000){
+                grobalGold -= 10000;
+                PlayerPrefs.SetInt("GrobalGold", grobalGold);
+                PlayerPrefs.SetString("Hunter4", "Hunter4");
+                CharacterPanelButton();
+                PlayerPrefs.Save();
+            } else {
+                GoldLess();
+            }
+        } else if(characterBuyNum==4){ // 마법사 50,000 골드
+            if(grobalGold >= 50000){
+                grobalGold -= 50000;
+                PlayerPrefs.SetInt("GrobalGold", grobalGold);
+                PlayerPrefs.SetString("Wizard", "Wizard");
+                CharacterPanelButton();
+                PlayerPrefs.Save();
+            } else {
+                GoldLess();
+            }
+        }
+    }
 }
