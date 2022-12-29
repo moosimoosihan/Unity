@@ -11,11 +11,11 @@ public class PlayerObj : MonoBehaviour
     public float power;
     public float life;
     public GameManager gameManager;
-    SpriteRenderer spriteRenderer;
+    public SpriteRenderer spriteRenderer;
     public bool playerObjDead;
     public bool maxLevel;
     Rigidbody2D rigid;
-    Animator anim;
+    public Animator anim;
     public PlayerMove playerMove;
     float AttackTime; // 스컬 공격 쿨타임
     public float speed; // 이동 속도
@@ -311,7 +311,7 @@ public class PlayerObj : MonoBehaviour
 
         if(type == "Turret"){ // 터렛 총알 공격
              if(maxLevel){ // 터렛 궁극기 화염 방사기
-                GameObject bullet = gameManager.objectManager.Get(56);
+                GameObject bullet = gameManager.objectManager.Get(18);
                 bullet.transform.position = transform.position;
                 Rigidbody2D rigid = bullet.GetComponent<Rigidbody2D>();
                 Bullet bulletLogic = bullet.GetComponent<Bullet>();
@@ -575,7 +575,7 @@ public class PlayerObj : MonoBehaviour
             return;
 
         audioSource.clip = gameManager.audioManager.hit0Auido;
-        if(!audioSource.isPlaying){
+        if(audioSource.clip != null && !audioSource.isPlaying && gameObject.activeSelf){
             gameManager.audioManager.PlayOneShotSound(audioSource, audioSource.clip, audioSource.volume);
         }
         if(type == "Enemy"){
@@ -663,7 +663,7 @@ public class PlayerObj : MonoBehaviour
             return;
         
         audioSource.clip = gameManager.audioManager.healingAudio;
-        if(!audioSource.isPlaying){
+        if(audioSource.clip != null && !audioSource.isPlaying && gameObject.activeSelf){
             gameManager.audioManager.PlayOneShotSound(audioSource, audioSource.clip, audioSource.volume);
         }
         if(life+healValue>maxLife){

@@ -36,8 +36,8 @@ public class AudioManager : MonoBehaviour
         int count1 = soundOneShot[clip].Count;
         //Debug.Log(clip.name + " 재생갯수 : " + count1);
       
-        source.PlayOneShot(clip, volumeScale);
-        StartCoroutine(RemoveVolumeFromClip(clip, volumeScale));
+        source.PlayOneShot(clip, 0 /* volumeScale */);
+        StartCoroutine(RemoveVolumeFromClip(clip, 0 /* volumeScale */));
     }
     private  IEnumerator RemoveVolumeFromClip(AudioClip clip, float volume)
     {

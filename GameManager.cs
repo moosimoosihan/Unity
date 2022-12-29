@@ -5,7 +5,6 @@ using UnityEngine.UI;
 using System.IO;
 using UnityEngine.SceneManagement;
 using Cinemachine;
-//using GoogleMobileAds.Api;
 
 public class GameManager : MonoBehaviour
 {
@@ -15,7 +14,7 @@ public class GameManager : MonoBehaviour
     public Spawner spawner;
 
     //광고 함수
-    //private InterstitialAd interstitial;
+    public AdmobVideoScript adManager;
 
     //언어 함수
     public string language;
@@ -478,7 +477,7 @@ public class GameManager : MonoBehaviour
     void ExpLevelUp()
     {
         audioSource.clip = audioManager.LevelUpAuido;
-        if(!audioSource.isPlaying){
+        if(audioSource.clip != null && !audioSource.isPlaying && gameObject.activeSelf){
             audioManager.PlayOneShotSound(audioSource, audioSource.clip, audioSource.volume);
         }
         playerMove.exp -= levelUpExp;
@@ -509,7 +508,7 @@ public class GameManager : MonoBehaviour
     public void ClickSelectButton(int num)
     {
         audioSource.clip = audioManager.selectAuido;
-        if(!audioSource.isPlaying){
+        if(audioSource.clip != null && !audioSource.isPlaying && gameObject.activeSelf){
             audioManager.PlayOneShotSound(audioSource, audioSource.clip, audioSource.volume);
         }
         if(selectNumber[num]==-1){
@@ -749,7 +748,6 @@ public class GameManager : MonoBehaviour
         grobalGold = PlayerPrefs.GetInt("GrobalGold");
         grobalGold += gold;
         PlayerPrefs.SetInt("GrobalGold",grobalGold);
-        PlayerPrefs.SetString("Language",language);
         PlayerPrefs.Save();
         Time.timeScale = 1;
         SceneManager.LoadScene(0);
@@ -757,7 +755,7 @@ public class GameManager : MonoBehaviour
     public void playerDead()
     {
         audioSource.clip = audioManager.LoseAuido;
-        if(!audioSource.isPlaying){
+        if(audioSource.clip != null && !audioSource.isPlaying && gameObject.activeSelf){
             audioManager.PlayOneShotSound(audioSource, audioSource.clip, audioSource.volume);
         }
         pauseButton.SetActive(false);
@@ -784,40 +782,12 @@ public class GameManager : MonoBehaviour
     }
     public void ResurrectionButton()
     {
-        //현재는 광고가 없으니 바로 부활
-        playerMove.PlayerStateClear();
-        playerMove.Boom(1000,true);
-        playerMove.playerDeadCount++;
-        playerDeadChancePanel.SetActive(false);
-        playerMove.playerDead = false;
-        playerMove.anim.SetBool("Dead",playerMove.playerDead);
-        playerMove.life = 0;
-        playerMove.life += playerMove.maxLife/2;
-        playerMove.gameObject.layer = 6;
-        Time.timeScale = 1;
-        pauseButton.SetActive(true);
-
-        // 광고 시청 버튼을 누를 경우
-        // RequestInterstitial();
-        
-        // 광고 로딩 함수
-        // StartCoroutine(showInterstitial());
-        // IEnumerator showInterstitial(){
-        //     while(!this.interstitial.IsLoaded()){
-        //         yield return new WaitForSeconds(0.2f);
-        //     }
-        //     this.interstitial.Show();
-        //     myCanvas.sortingOrder = -1;
-        // }
-
-        // if (this.interstitial.IsLoaded()) {
-        //     this.interstitial.Show();
-        // }
+        adManager.Show();
     }
     void StageClear()
     {
         audioSource.clip = audioManager.winAuido;
-        if(!audioSource.isPlaying){
+        if(audioSource.clip != null && !audioSource.isPlaying && gameObject.activeSelf){
             audioManager.PlayOneShotSound(audioSource, audioSource.clip, audioSource.volume);
         }
         if(language == "English"){
@@ -892,32 +862,11 @@ public class GameManager : MonoBehaviour
             targetCountTime += Time.fixedDeltaTime;
         }
     }
-    //광고 함수
-    /*private void RequestInterstitial()
-    {
-        // 주의! 실행 전 꼭 테스트로 실행 할 것!
-        // 테스트 ca-app-pub-3940256099942544/1033173712
-        // 광고 ca-app-pub-4730748511418289/9524493073
-        #if UNITY_ANDROID
-            string adUnitId = "ca-app-pub-3940256099942544/1033173712";
-        #elif UNITY_IPHONE
-            string adUnitId = "ca-app-pub-3940256099942544/4411468910";
-        #else
-            string adUnitId = "unexpected_platform";
-        #endif
 
-        // Initialize an InterstitialAd.
-        this.interstitial = new InterstitialAd(adUnitId);
-        // Called when the ad is closed.
-        this.interstitial.OnAdClosed += HandleOnAdClosed;
-        // Create an empty ad request.
-        AdRequest request = new AdRequest.Builder().Build();
-        // Load the interstitial with the request.
-        this.interstitial.LoadAd(request);
-    }*/
-    public void HandleOnAdClosed(object sender, System.EventArgs args)
+    //광고 보상
+    public void AdReward()
     {
-        //광고가 닫혔을경우 부활
+        // 광고 시청 후 부활
         playerMove.PlayerStateClear();
         playerMove.Boom(1000,true);
         playerMove.playerDeadCount++;

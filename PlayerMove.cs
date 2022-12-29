@@ -160,6 +160,10 @@ public class PlayerMove : MonoBehaviour
     int stateLevelLife;
     int stateLevelSpeed;
     public int plusPower;
+    int stateLevelCriticalChance;
+    int stateLevelCriticalDamage;
+    int stateLevelReLife;
+    int stateLevelLifeValue;
 
     //오디오 함수
     AudioSource audioSource;
@@ -185,7 +189,29 @@ public class PlayerMove : MonoBehaviour
         } else {
             stateLevelSpeed = 0;
         }
-
+        if(PlayerPrefs.HasKey("StateLevelCriticalChance")){
+            stateLevelCriticalChance = PlayerPrefs.GetInt("StateLevelCriticalChance");
+            criticalChance += stateLevelCriticalChance;
+        } else {
+            criticalChance = 0;
+        }
+        if(PlayerPrefs.HasKey("StateLevelCriticalDamage")){
+            stateLevelCriticalDamage = PlayerPrefs.GetInt("StateLevelCriticalDamage");
+            criticalDamage += stateLevelCriticalDamage*0.05f;
+        } else {
+            stateLevelCriticalDamage = 0;
+        }
+        if(PlayerPrefs.HasKey("StateLevelReLife")){
+            stateLevelReLife = PlayerPrefs.GetInt("StateLevelReLife");
+        } else {
+            stateLevelReLife = 0;
+        }
+        if(PlayerPrefs.HasKey("StateLevelLifeValue")){ // 힐량 스탯 저장된 내용이 있다면
+            stateLevelLifeValue= PlayerPrefs.GetInt("StateLevelLifeValue");
+            healthValue += (stateLevelLifeValue*50);
+        } else {
+            PlayerPrefs.SetInt("StateLevelReLife", stateLevelLifeValue);
+        }
         //모든 무기 레벨을 0으로 초기화
         for(int i=0;i<weaponLevel.Length;i++){
             weaponLevel[i] = 0;
@@ -231,6 +257,13 @@ public class PlayerMove : MonoBehaviour
     {
         //체력이 0이면 죽는 에니메이션
         if(life <= 0 && playerDeadCount == 0 && !playerDead){
+            
+            if(stateLevelReLife==1){ // 부활
+                stateLevelReLife--;
+                life = maxLife;
+                return;
+            }
+
             life = 0;
             playerDead = true;
             ReturnSprite();
@@ -281,11 +314,8 @@ public class PlayerMove : MonoBehaviour
     {
         if(playerDead)
             return;
-        
-    //     if(joyStickOn)
-    //         return;
             
-         // 걷는 에니메이션(magnitude 순수 크기)
+        // 걷는 에니메이션(magnitude 순수 크기)
         anim.SetFloat("Speed", inputVec.magnitude);
 
         if(inputVec.x != 0 && !joyStickOn){
@@ -293,15 +323,6 @@ public class PlayerMove : MonoBehaviour
         spriteRenderer.flipX = inputVec.x < 0;
         }
     }
-
-    // //인풋 시스템으로 이동 함수 단축
-    // void OnMove(InputValue value)
-    // {
-    //     if(playerDead)
-    //         return;
-
-    //     inputVec = value.Get<Vector2>();
-    // }
 
     void OnCollisionStay2D(Collision2D other) {
         //적군과 맞닿아 있다면 데미지가 들어가라
@@ -376,7 +397,7 @@ public class PlayerMove : MonoBehaviour
     public void PlayerDamaged(GameObject target, string type)
     {
         audioSource.clip = gameManager.audioManager.hit0Auido;
-        if(!audioSource.isPlaying){
+        if(audioSource.clip != null && !audioSource.isPlaying && gameObject.activeSelf){
             gameManager.audioManager.PlayOneShotSound(audioSource, audioSource.clip, 1);
         }
         if(type=="Enemy"){
@@ -505,13 +526,13 @@ public class PlayerMove : MonoBehaviour
                 case "Exp0":
                     exp += 10;
                 break;
-                //경험치 50
+                //경험치 20
                 case "Exp1":
-                    exp += 30;
+                    exp += 20;
                 break;
-                //경험치 100
+                //경험치 30
                 case "Exp2":
-                    exp += 50;
+                    exp += 30;
                 break;
                 //동전0
                 case "Coin0":
@@ -585,45 +606,52 @@ public class PlayerMove : MonoBehaviour
             //윈드포스
             switch(weaponLevel[1]){
             case 1:
-                if(weapon6Count<4){
-                    weapon6Count++;
-                } else {
+                if(weapon6Count<=0){
                     WeaponWindForce(30,1f,1f);
+                    weapon6Count = 4;
+                } else {
+                    weapon6Count--;
                 }
             break;
             case 2:
-                if(weapon6Count<4){
-                    weapon6Count++;
-                } else {
+                if(weapon6Count<=0){
                     WeaponWindForce(60,1.1f,1.2f);
+                    weapon6Count = 4;
+                } else {
+                    weapon6Count--;
                 }
             break;
             case 3:
-                if(weapon6Count<4){
-                    weapon6Count++;
-                } else {
+                if(weapon6Count<=0){
                     WeaponWindForce(90,1.2f,1.5f);
+                    weapon6Count = 4;
+                } else {
+                    weapon6Count--;
                 }
             break;
             case 4:
-                if(weapon6Count<4){
-                    weapon6Count++;
-                } else {
+                if(weapon6Count<=0){
+                    weapon6Count = 4;
                     WeaponWindForce(120,1.3f,1.7f);
+                } else {
+                    weapon6Count--;
                 }
             break;
             case 5:
-                if(weapon6Count<4){
-                    weapon6Count++;
-                } else {
+                if(weapon6Count<=0){
                     WeaponWindForce(160,1.5f,2f);
+                    weapon6Count = 4;
+                } else {
+                    weapon6Count--;
                 }
             break;
             case 6:
-                if(weapon6Count<4){
-                    weapon6Count++;
-                } else {
+                if(weapon6Count<=0){
+                    weapon6Count = 4;
                     WeaponWindForce(200,1.5f,2f);
+                } else {
+                    weapon6Count--;
+                    
                 }
                 if(!weaponWindForceMax.activeSelf){
                     weaponWindForceMax.SetActive(true);
@@ -866,7 +894,7 @@ public class PlayerMove : MonoBehaviour
                 break;
             }
         } else if(gameManager.character == "Hunter"){
-                if(weaponHunter2Count>1){
+                if(weaponHunter2Count<=0){
                     //곡괭이
                     switch(weaponLevel[0]){
                         case 1:
@@ -930,10 +958,10 @@ public class PlayerMove : MonoBehaviour
                             WeaponTrident(500,1.8f,3,true);
                         break;
                     }
-                    weaponHunter2Count = 0;
+                    weaponHunter2Count = 2;
                 } else {
-                        weaponHunter2Count++;
-                    }
+                    weaponHunter2Count--;
+                }
                 //샷건 (탄 증가)
                 switch(weaponLevel[4]){
                 case 1:
@@ -1068,9 +1096,9 @@ public class PlayerMove : MonoBehaviour
                 }
                 switch(weaponLevel[3]){ // 3초마다 빠르게 전진하며 적군을 밀쳐내며 공격
                     case 1:
-                        //3초 빠르게 달리고 3초 쉬고
+                        //3초 빠르게 달리고 5초 쉬고
                         if(horseCount<=0){
-                            horseCount = 6;
+                            horseCount = 8;
                             HorseAttack(50,false);
                         } else {
                             horseCount--;
@@ -1078,7 +1106,7 @@ public class PlayerMove : MonoBehaviour
                     break;
                     case 2:
                         if(horseCount<=0){
-                            horseCount = 6;
+                            horseCount = 8;
                             HorseAttack(100,false);
                         } else {
                             horseCount--;
@@ -1086,7 +1114,7 @@ public class PlayerMove : MonoBehaviour
                     break;
                     case 3:
                         if(horseCount<=0){
-                            horseCount = 6;
+                            horseCount = 8;
                             HorseAttack(140,false);
                         } else {
                             horseCount--;
@@ -1094,7 +1122,7 @@ public class PlayerMove : MonoBehaviour
                     break;
                     case 4:
                         if(horseCount<=0){
-                            horseCount = 6;
+                            horseCount = 8;
                             HorseAttack(200,false);
                         } else {
                             horseCount--;
@@ -1102,7 +1130,7 @@ public class PlayerMove : MonoBehaviour
                     break;
                     case 5:
                         if(horseCount<=0){
-                            horseCount = 6;
+                            horseCount = 8;
                             HorseAttack(240,false);
                         } else {
                             horseCount--;
@@ -1110,7 +1138,7 @@ public class PlayerMove : MonoBehaviour
                     break;
                     case 6:
                         if(horseCount<=0){
-                            horseCount = 6;
+                            horseCount = 8;
                             HorseAttack(300,true);
                         } else {
                             horseCount--;
@@ -1974,7 +2002,7 @@ public class PlayerMove : MonoBehaviour
                 if(!passiveLevel[5,0]){
                     passiveLevel[5,0] = true;
                     criticalDamage += 0.05f;
-                    criticalChance += 4;
+                    criticalChance += 5;
                 }
             break;
             case 2:
@@ -2378,7 +2406,7 @@ public class PlayerMove : MonoBehaviour
             shieldCount = 0f;
             isShield = true;
             PointEffector2D point = horseAttackObj.GetComponent<PointEffector2D>();
-            point.forceMagnitude = 400;
+            point.forceMagnitude = 100;
         }
     }
     // 십자가 공격
@@ -2560,6 +2588,8 @@ public class PlayerMove : MonoBehaviour
                 skullLogic.life = objLife;
                 skullLogic.maxLife = objLife;
                 skullLogic.type = "Skull";
+                skullLogic.anim.runtimeAnimatorController = skullLogic.animCharacter[0];
+                skullLogic.spriteRenderer.sprite = skullLogic.sprites[0];
                 skullLogic.power = (dmg + plusPower) * power;
                 skullLogic.maxLevel = maxLevel;
                 Vector2 pos = new Vector2(transform.position.x+1f,transform.position.y);
@@ -2573,6 +2603,8 @@ public class PlayerMove : MonoBehaviour
                 bowSkullLogic.life = objLife*0.8f;
                 bowSkullLogic.maxLife = objLife*0.8f;
                 bowSkullLogic.type = "BowSkull";
+                bowSkullLogic.anim.runtimeAnimatorController = bowSkullLogic.animCharacter[1];
+                bowSkullLogic.spriteRenderer.sprite = bowSkullLogic.sprites[1];
                 bowSkullLogic.power = (dmg + plusPower)* 1.1f * power;
                 bowSkullLogic.maxLevel = maxLevel;
                 bowSkull.transform.position = pos;
@@ -2805,7 +2837,7 @@ public class PlayerMove : MonoBehaviour
     public void Healing(float healValue)
     {
         audioSource.clip = gameManager.audioManager.healingAudio;
-        if(!audioSource.isPlaying){
+        if(audioSource.clip != null && !audioSource.isPlaying && gameObject.activeSelf){
             gameManager.audioManager.PlayOneShotSound(audioSource, audioSource.clip, 1);
         }
         if(gameManager.character=="Hunter"){

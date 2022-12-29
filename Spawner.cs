@@ -11,10 +11,10 @@ public class Spawner : MonoBehaviour
     public ObjectManager objectManager;
     public bool spawnEnd;
     public bool bossClear;
-    bool wave1;
-    bool wave2;
-    bool wave3;
-    bool waveOn;
+    public bool wave1 = false;
+    public bool wave2 = false;
+    public bool wave3 = false;
+    public bool waveOn = false;
     float spawnTime;
     public bool isBoss; // 보스랑 싸우는 중인가?
     public SpawnData[] spawnData;
@@ -33,11 +33,6 @@ public class Spawner : MonoBehaviour
     
     //상자 함수
     float boxCreatTime;
-
-    void Start()
-    {
-        
-    }
 
     void Update()
     {
@@ -85,7 +80,7 @@ public class Spawner : MonoBehaviour
             curSpawnDelay = 0;
 
             if(!waveOn){
-                spawnTime = 1.8f/(gameManager._min+1);
+                spawnTime = 1.5f/(gameManager._min+1);
             }
             // 몬스터 웨이브
             if(gameManager._min >= 4 && !wave1){
@@ -93,26 +88,28 @@ public class Spawner : MonoBehaviour
                 waveOn = true;
                 Event("EventIn");
                 spawnTime = 0.1f;
-            } else if(gameManager._min >= 5 && wave1){
-                waveOn = false;
+                Invoke("WaveOut",60f);
             }
             if(gameManager._min >= 9 && !wave2){
                 wave2 = true;
                 waveOn = true;
                 Event("EventIn");
                 spawnTime = 0.05f;
-            } else if(gameManager._min >= 10 && wave2){
-                waveOn = false;
+                Invoke("WaveOut",60f);
             }
             if(gameManager._min >= 14 && !wave3){
                 wave3 = true;
                 waveOn = true;
                 Event("EventIn");
                 spawnTime = 0.01f;
-            } else if(gameManager._min >= 15 && wave3){
-                waveOn = false;
-            }
-            
+                Invoke("WaveOut",60f);
+            }            
+        }
+    }
+    void WaveOut()
+    {
+        if(waveOn){
+            waveOn = false;
         }
     }
     void BossCheck(){

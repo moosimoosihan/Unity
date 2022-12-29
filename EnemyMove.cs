@@ -11,7 +11,7 @@ public class EnemyMove : MonoBehaviour
     public int criticalChance; // 크리티컬 확률
     public float criticalDamage = 1.5f; // 크리티컬 데미지
 
-    bool enemyDead;
+    public bool enemyDead;
 
     //적군 총알 함수
     public string enemyName;
@@ -124,6 +124,13 @@ public class EnemyMove : MonoBehaviour
         enemyLife = data.enemyLife;
         maxShootDelay = data.maxShootDelay;
         bulletSpeed = data.bulletSpeed;
+        curPatternCount = 0;
+        maxPatternCount = new int[0];
+        CancelInvoke("Think");
+        CancelInvoke("FireShot");
+        CancelInvoke("FireAround");
+        CancelInvoke("FireArc");
+        CancelInvoke("BreakTime");
         switch (enemyName) {
             case "EnemyA":
                 transform.localScale = new Vector3(0.4f,0.4f,0);
@@ -168,7 +175,7 @@ public class EnemyMove : MonoBehaviour
     void Update()
     {
         //보스라면 체력을 표기해라
-        if ((enemyName == "EnemyE") && gameObject.activeSelf) {
+        if (enemyName == "EnemyE" && gameObject.activeSelf) {
             gameManager.spawner.bossHealth.fillAmount = enemyLife / enemyMaxLife;
         } else if (enemyName == "EnemyD" && gameObject.activeSelf) {
             gameManager.spawner.bossHealth.fillAmount = enemyLife / enemyMaxLife;
@@ -364,8 +371,8 @@ public class EnemyMove : MonoBehaviour
                 poisonDamage = bullet.power;
                 OnHit(transform.position, bullet.power, "Poison");
                 isPoison = true;
-            } else { // 노멀데미지                    
-                OnHit(other.transform.position, bullet.power, "None");
+            } else { // 노멀데미지
+                OnHit(transform.position, bullet.power, "None");
             }
         } else if (other.gameObject.tag == "Effect") { //과부화 폭발 데미지
             Effect effect = other.GetComponent<Effect>();
@@ -678,7 +685,7 @@ public class EnemyMove : MonoBehaviour
         } else if(type == "Wind"){
             audioSource.clip = gameManager.audioManager.hit0Auido;
         }
-        if(!audioSource.isPlaying){
+        if(audioSource.clip != null && !audioSource.isPlaying && gameObject.activeSelf){
             gameManager.audioManager.PlayOneShotSound(audioSource, audioSource.clip, audioSource.volume);
         }
         if (type == "Fire" || type == "None" || type == "Lightning" || type == "Stone") {
@@ -696,11 +703,13 @@ public class EnemyMove : MonoBehaviour
         }
 
         if (enemyLife <= 0) {
+            gameObject.layer = 10;
             enemyDead = true;
             audioSource.clip = gameManager.audioManager.deadAuido;
-            gameManager.audioManager.PlayOneShotSound(audioSource, audioSource.clip, audioSource.volume);
+            if(audioSource.clip != null && !audioSource.isPlaying && gameObject.activeSelf){
+                gameManager.audioManager.PlayOneShotSound(audioSource, audioSource.clip, audioSource.volume);
+            }
             if (enemyName == "Box") {
-                gameObject.layer = 10;
                 DestroyEnemy();
             } else {
                 playerLogic.enemyClearNum++;
@@ -717,6 +726,7 @@ public class EnemyMove : MonoBehaviour
                 CancelInvoke("FireShot");
                 CancelInvoke("FireAround");
                 CancelInvoke("FireArc");
+                CancelInvoke("BreakTime");
                 // gameManager.camAnim.SetBool("IsOn", false);
                 gameManager.spawner.bossSquare.SetActive(false);
                 gameManager.spawner.bossHealthBar.SetActive(false);
@@ -831,6 +841,7 @@ public class EnemyMove : MonoBehaviour
         anim.SetTrigger("Hit");
 
         if (enemyLife <= 0) {
+            gameObject.layer = 10;
             enemyDead = true;
             playerLogic.enemyClearNum++;
             EnemyDead();
@@ -849,6 +860,7 @@ public class EnemyMove : MonoBehaviour
                 CancelInvoke("FireShot");
                 CancelInvoke("FireAround");
                 CancelInvoke("FireArc");
+                CancelInvoke("BreakTime");
                 // gameManager.camAnim.SetBool("IsOn", false);
                 gameManager.spawner.bossSquare.SetActive(false);
                 gameManager.spawner.bossHealthBar.SetActive(false);
@@ -869,7 +881,6 @@ public class EnemyMove : MonoBehaviour
     }
     public void EnemyDead()
     {
-        gameObject.layer = 10;
         rigid.velocity = Vector2.zero;
         anim.SetBool("Dead", true);
         Invoke("DestroyEnemy", 0.5f);
@@ -894,6 +905,9 @@ public class EnemyMove : MonoBehaviour
             rigid.AddForce(dirVec.normalized * bulletSpeed, ForceMode2D.Impulse);
         } else if (enemyName == "EnemyC") {
             GameObject bullet = objectManager.Get(48);
+            Bullet bulletLogic = bullet.GetComponent<Bullet>();
+            float dmg = CriticalHit(power);
+            bulletLogic.power = dmg;
             bullet.transform.position = transform.position;
             Rigidbody2D rigid = bullet.GetComponent<Rigidbody2D>();
             Vector3 dirVec = player.transform.position - transform.position;
@@ -951,7 +965,8 @@ public class EnemyMove : MonoBehaviour
         for (int index = 0; index < 5; index++) {
             GameObject bullet = objectManager.Get(47);
             Bullet bulletLogic = bullet.GetComponent<Bullet>();
-            bulletLogic.power = power;
+            float dmg = CriticalHit(power);
+            bulletLogic.power = dmg;
             bullet.transform.position = transform.position;
             Rigidbody2D rigid = bullet.GetComponent<Rigidbody2D>();
             Vector2 dirVec = player.transform.position - transform.position;
@@ -978,7 +993,8 @@ public class EnemyMove : MonoBehaviour
 
         Rigidbody2D rigid = bullet.GetComponent<Rigidbody2D>();
         Bullet bulletLogic = bullet.GetComponent<Bullet>();
-        bulletLogic.power = power;
+        float dmg = CriticalHit(power);
+        bulletLogic.power = dmg;
         Vector2 dirVec = new Vector2(Mathf.Cos(Mathf.PI * 10 * curPatternCount / maxPatternCount[patternIndex]), Mathf.Sin(Mathf.PI * 10 * curPatternCount / maxPatternCount[patternIndex]));
         rigid.AddForce(dirVec.normalized * bulletSpeed, ForceMode2D.Impulse);
 
@@ -1001,7 +1017,8 @@ public class EnemyMove : MonoBehaviour
         for (int index = 0; index < roundNumA; index++) {
             GameObject bullet = objectManager.Get(48);
             Bullet bulletLogic = bullet.GetComponent<Bullet>();
-            bulletLogic.power = power;
+            float dmg = CriticalHit(power);
+            bulletLogic.power = dmg;
             bullet.transform.position = transform.position;
             bullet.transform.rotation = Quaternion.identity;
 
@@ -1278,6 +1295,8 @@ public class EnemyMove : MonoBehaviour
         Debug.Log("휩쓸기 공격 시작");
         GameObject bossAttack = gameManager.objectManager.Get(49);
         Bullet bossAttackLogic = bossAttack.GetComponent<Bullet>();
+        float dmg = CriticalHit(power);
+        bossAttackLogic.power = dmg;
         bossAttackLogic.power = power;
         bossAttack.transform.localScale = new Vector3(1f, 1f, 0);
         bossAttack.transform.position = transform.position - attackPos.normalized;
@@ -1300,7 +1319,8 @@ public class EnemyMove : MonoBehaviour
         GameObject bossAttack = gameManager.objectManager.Get(50);
         Bullet bossAttackLogic = bossAttack.GetComponent<Bullet>();
         bossAttack.transform.localScale = new Vector3(1.5f, 1.5f, 0);
-        bossAttackLogic.power = power;
+        float dmg = CriticalHit(power);
+        bossAttackLogic.power = dmg;
         bossAttackLogic.attack2Vec = transform.position - attackPos.normalized;
         bossAttack.transform.position = new Vector3(transform.position.x - attackPos.normalized.x, transform.position.y - attackPos.normalized.y+3f);
         bossAttackCount++;
@@ -1319,7 +1339,8 @@ public class EnemyMove : MonoBehaviour
         GameObject bossAttack = gameManager.objectManager.Get(53);
         Bullet bossAttackLogic = bossAttack.GetComponent<Bullet>();
         bossAttack.transform.localScale = new Vector3(3.5f, 3.5f, 0);
-        bossAttackLogic.power = power;
+        float dmg = CriticalHit(power);
+        bossAttackLogic.power = dmg;
         bossAttack.transform.position = attackVec;
         isAttack = false;
         Invoke("Check", 3f);
@@ -1348,7 +1369,8 @@ public class EnemyMove : MonoBehaviour
     {
         GameObject bossAttack = gameManager.objectManager.Get(51);
         Bullet bossAttackLogic = bossAttack.GetComponent<Bullet>();
-        bossAttackLogic.power = power/4;
+        float dmg = CriticalHit(power);
+        bossAttackLogic.power = dmg/4;
         bossAttack.transform.localScale = new Vector3(0.8f, 0.8f, 0);
         bossAttack.transform.position = attackVec;
         Invoke("Attack5End", 7f);

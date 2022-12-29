@@ -47,20 +47,22 @@ public class MainManager : MonoBehaviour
     public Text characterBuyButtonText;
     public GameObject characterBuyButton;
 
-    //인벤토리 함수
-    public Image[] slutImage;
-    public GameObject inventoryInfoPanel;
-    public Image infoImage;
-    public Text infoText;
-    public Text infoExText;
-    public Sprite[] infoImageSprite;
-    string curItem; // 현재 보고있는 아이템
+    //스탯 정보 함수
+    public Image stateInfoImage;
+    public GameObject stateInfoPanel;
+    public Text stateInfoText;
+    public Text stateInfoExText;
+    public Sprite[] stateInfoCharacterImage;
 
     // 스탯 레벨
     int stateLevelAtttack;
     int stateLevelLife;
     int stateLevelSpeed;
     public Text[] stateLevelButtonTexts;
+    int stateLevelCriticalChance;
+    int stateLevelCriticalDamage;
+    int stateLevelReLife;
+    int stateLevelLifeValue;
 
     // 캐릭터 버튼
     public Image[] characterButtonImage;
@@ -85,6 +87,10 @@ public class MainManager : MonoBehaviour
         stateLevelAtttack = 0;
         stateLevelLife = 0;
         stateLevelSpeed = 0;
+        stateLevelCriticalChance = 0;
+        stateLevelCriticalDamage = 0;
+        stateLevelReLife = 0;
+        stateLevelLifeValue = 0;
         if (PlayerPrefs.HasKey("GrobalGold")){ // 골드가 저장된게 있다면
             grobalGold = PlayerPrefs.GetInt("GrobalGold");
         } else {
@@ -125,7 +131,26 @@ public class MainManager : MonoBehaviour
         } else {
             PlayerPrefs.SetInt("StateLevelSpeed", stateLevelSpeed);
         }
-
+        if(PlayerPrefs.HasKey("StateLevelCriticalChance")){ // 크리티컬 확률 스탯 저장된 내용이 있다면
+            stateLevelCriticalChance = PlayerPrefs.GetInt("StateLevelCriticalChance");
+        } else {
+            PlayerPrefs.SetInt("StateLevelCriticalChance", stateLevelCriticalChance);
+        }
+        if(PlayerPrefs.HasKey("StateLevelCriticalDamage")){ // 크리티컬 데미지 스탯 저장된 내용이 있다면
+            stateLevelCriticalDamage = PlayerPrefs.GetInt("StateLevelCriticalDamage");
+        } else {
+            PlayerPrefs.SetInt("StateLevelSpeed", stateLevelCriticalDamage);
+        }
+        if(PlayerPrefs.HasKey("StateLevelReLife")){ // 부활 스탯 저장된 내용이 있다면
+            stateLevelReLife= PlayerPrefs.GetInt("StateLevelReLife");
+        } else {
+            PlayerPrefs.SetInt("StateLevelReLife", stateLevelReLife);
+        }
+        if(PlayerPrefs.HasKey("StateLevelLifeValue")){ // 힐량 스탯 저장된 내용이 있다면
+            stateLevelLifeValue= PlayerPrefs.GetInt("StateLevelLifeValue");
+        } else {
+            PlayerPrefs.SetInt("StateLevelReLife", stateLevelLifeValue);
+        }
         stage = clearStage;
         PlayerPrefs.Save();
         if(language == "English" || language == null){
@@ -137,23 +162,24 @@ public class MainManager : MonoBehaviour
             engButtonText.text = "English";
             korButtonText.text = "Korean";
             characterButtonText.text = "Character";
-            inventoryButtonText.text = "Inventory";
+            inventoryButtonText.text = "State\nInfo";
             stateLevelButtonText.text = "State\nLevel";
             characterBuyButtonText.text = "Buy";
+            stateInfoText.text = "State Infomation";
             characterText.text = "Character";
             creatorText[0].text = "Creator";
             creatorText[1].text = "Creator";
-            creatorText[2].text = "Developer : CreapySmoothie\nDesign : pandayu\nOriginal : Gold Metal Studio";
-            exBuyText = new string[]{"Paladin\n1,000 Gold",
-                                    "Vagabond\n5,000 Gold",
-                                    "Zookeeper\n10,000 Gold",
-                                    "Wizard\n50,000 Gold"};
+            creatorText[2].text = "Developer : CreapySmoothie\nDesign : pandayu\n\nSource provided\nGold Metal Studio undead survival\nDustyroom Casual Game Sound - One Shot SFX Pack\nBasic RPG Icons\nWarped Shooting Fx";
+            exBuyText = new string[]{"Paladin\n1,000 Gold\nUse light weapons.",
+                                    "Vagabond\n5,000 Gold\nDifficulty level is high.",
+                                    "Zookeeper\n10,000 Gold\nThe summons fight for you.",
+                                    "Wizard\n50,000 Gold\nIt uses great magic."};
             exText = new string[]{"Hunter\nDoubles all HP recovery.\nUse high-damage physical attacks.",
                                     "Paladin\nStart with double your health.\nDirectly collide with the enemy and fight back.",
                                     "Vagabond\nMovement speed is 20% faster.\nThrows all throwable objects at enemies.",
                                     "Zookeeper\nDamage is increased double.\nSummons allies to fight.",
                                     "Wizard\nUse magic",};
-            helpExText.text = "Wizards can use magic in various combinations.\nDamage varies depending on the combination of elements.\nElement Combination Table\nWind + Element = Spread\nYou will be hit once more by the damage of the currently attached element. .\nLightning + Fire = Overload\nAn explosion occurs, knocking back nearby enemies and dealing damage.\nLightning + Ice = Superconductivity\nDefense by 1.5x.\nIce + Water = Freezing\nEnemies are frozen. However, if you are hit with another element (fire, lightning, stone), the ice will break.\nWater + Electricity = Electrocution\nYou take damage per second and stop moving for a while.\nWater + Fire = Evaporation\n1.5 Takes double damage.\nFire + Ice = Melting\nInflicts 1.5 times the damage.\nWater = Enemies get wet.\nFire = Deals 100% damage per second to enemies. .\nIce = slows down the movement speed of enemy characters.\nElectricity = deals 50% damage per second to enemy characters.\nWind = pushes back enemies.\nStone = pushes back enemies and gives a certain chance of a shield item creates.\nLight = Recovers HP by a certain amount of damage.\n\nHunter\nCan deal physical damage.\nEach character has unique stats.";
+            helpExText.text = "Damage varies according to the combination of elements.\nCombination Table\nWind + Element = Spread\nYou will be hit once more with the damage of the currently attached element.\nLightning + Fire = Overload\nAn explosion occurs and nearby enemies Pushes back and deals damage.\nLightning + Ice = Super Conductive\nDamages 1.5 times.\nIce + Water = Freezing\nEnemies are frozen, but are frozen when hit with other elements (fire, lightning, stone). \nWater + electricity = electric shock\nYou take damage per second and stop moving for a while.\nWater + fire = evaporation\nInflicts 1.5 times the damage.\nFire + Ice = Melting\nInflicts 1.5 times the damage.\nWater = enemy characters get wet.\nFire = Deals 100% damage per second to enemies.\nIce = Slows enemy characters' movement speed.\nElectricity = Inflicts 50% damage per second to enemy characters.\nWind = Pushes back enemies.\nStone = Pushes enemies back and creates a barrier item with a certain chance.\nLight = Recovers HP by a certain amount of damage. .\n\nEach character has a unique stat.";
         } else if(language == "Korean"){
             helpText[0].text = "도움";
             helpText[1].text = "도움말";
@@ -163,17 +189,18 @@ public class MainManager : MonoBehaviour
             engButtonText.text = "영어";
             korButtonText.text = "한국어";
             characterButtonText.text = "캐릭터";
-            inventoryButtonText.text = "장비";
+            inventoryButtonText.text = "능력치\n정보";
             stateLevelButtonText.text = "능력치\n레벨";
             characterBuyButtonText.text = "구입";
+            stateInfoText.text = "정보창";
             characterText.text = "캐릭터";
             creatorText[0].text = "만든이";
             creatorText[1].text = "만든이";
-            creatorText[2].text = "개발자 : 무시무시한스무디\n디자인 : pandayu\n원작 : 골드메탈 스튜디오";
-            exBuyText = new string[]{"성기사\n1,000 골드",
-                                    "방랑자\n5,000 골드",
-                                    "사육사\n10,000 골드",
-                                    "마법사\n50,000 골드"};
+            creatorText[2].text = "개발자 : 무시무시한스무디\n디자인 : pandayu\n\n사용 소스\n골드메탈 스튜디오 언데드 서바이벌\nDustyroom Casual Game Sound - One Shot SFX Pack\nBasic RPG Icons\nWarped Shooting Fx";
+            exBuyText = new string[]{"성기사\n1,000 골드\n빛의 무기를 사용합니다.",
+                                    "방랑자\n5,000 골드\n난이도가 높습니다.",
+                                    "사육사\n10,000 골드\n소환물이 대신 싸워줍니다.",
+                                    "마법사\n50,000 골드\n엄청난 마법을 사용합니다."};
             exText = new string[]{"헌터\n모든 체력회복을 2배로 회복합니다.\n데미지가 높은 물리적인 공격을 사용합니다.",
                                     "성기사\n체력을 2배로 시작합니다.\n직접 적군과 부딪히며 맞서 싸웁니다.",
                                     "방랑자\n이동속도가 20% 더 빠릅니다.\n적군에게 던질 수 있는 모든 물체를 던집니다.",
@@ -241,17 +268,15 @@ public class MainManager : MonoBehaviour
     {
         PlayerPrefs.SetString("Language", "English");
         language = PlayerPrefs.GetString("Language");
-        toastText.text = "Replay please.";
-        toastTextObj.SetActive(true);
         PlayerPrefs.Save();
+        SceneManager.LoadScene(0);
     }
     public void KORButton()
     {
         PlayerPrefs.SetString("Language", "Korean");
         language = PlayerPrefs.GetString("Language");
-        toastText.text = "다시 시작해주세요.";
-        toastTextObj.SetActive(true);
         PlayerPrefs.Save();
+        SceneManager.LoadScene(0);
     }
     public void SettingPanelOn()
     {
@@ -305,50 +330,34 @@ public class MainManager : MonoBehaviour
     {
         characterBuyNum = btnNum;
         if(btnNum==0){ // 헌터
+            character = "Hunter";
             PlayerPrefs.SetInt("CharacterNum",btnNum);
-            PlayerPrefs.SetString("Character","Hunter");
+            PlayerPrefs.SetString("Character",character);
+            characterNum = btnNum;
             PlayerPrefs.Save();
             CharacterButtonImageSetUp(btnNum, true);
         } else if(btnNum==1){ // 헌터2
-            if(PlayerPrefs.HasKey("Hunter2")){
-                PlayerPrefs.SetInt("CharacterNum",btnNum);
-                PlayerPrefs.SetString("Character","Hunter2");
-                PlayerPrefs.Save();
-                CharacterButtonImageSetUp(btnNum, true);
-            } else {
-                characterBuyButton.SetActive(true);
-                CharacterButtonImageSetUp(btnNum, false);
-            }
+            CharacterSelect(btnNum, "Hunter2");
         } else if(btnNum==2){ // 헌터3
-            if(PlayerPrefs.HasKey("Hunter3")){
-                PlayerPrefs.SetInt("CharacterNum",btnNum);
-                PlayerPrefs.SetString("Character","Hunter3");
-                PlayerPrefs.Save();
-                CharacterButtonImageSetUp(btnNum, true);
-            } else {
-                characterBuyButton.SetActive(true);
-                CharacterButtonImageSetUp(btnNum, false);
-            }
+            CharacterSelect(btnNum, "Hunter3");
         } else if(btnNum==3){ // 헌터4
-            if(PlayerPrefs.HasKey("Hunter4")){
-                PlayerPrefs.SetInt("CharacterNum",btnNum);
-                PlayerPrefs.SetString("Character","Hunter4");
-                PlayerPrefs.Save();
-                CharacterButtonImageSetUp(btnNum, true);
-            } else {
-                characterBuyButton.SetActive(true);
-                CharacterButtonImageSetUp(btnNum, false);
-            }
+            CharacterSelect(btnNum, "Hunter4");
         } else if(btnNum==4){ // 위자드
-            if(PlayerPrefs.HasKey("Wizard")){
-                PlayerPrefs.SetInt("CharacterNum",btnNum);
-                PlayerPrefs.SetString("Character","Wizard");
-                PlayerPrefs.Save();
-                CharacterButtonImageSetUp(btnNum, true);
-            } else {
-                characterBuyButton.SetActive(true);
-                CharacterButtonImageSetUp(btnNum, false);
-            }
+            CharacterSelect(btnNum, "Wizard");
+        }
+    }
+    void CharacterSelect(int btnNum, string name)
+    {
+        if(PlayerPrefs.HasKey(name)){
+            character = name;
+            PlayerPrefs.SetInt("CharacterNum",btnNum);
+            PlayerPrefs.SetString("Character",character);
+            characterNum = btnNum;
+            PlayerPrefs.Save();
+            CharacterButtonImageSetUp(btnNum, true);
+        } else {
+            characterBuyButton.SetActive(true);
+            CharacterButtonImageSetUp(btnNum, false);
         }
     }
     void CharacterButtonImageSetUp(int btnNum, bool isHere)
@@ -372,25 +381,62 @@ public class MainManager : MonoBehaviour
         // 해당 레벨을 불러와 그만큼 버튼을 활성화 시켜야 함 레벨마다 가격이 달라짐!
 
         stateLevelPanel.SetActive(true);
-        // 공격력 무한으로 증가 가능 레벨당 10 증가 레벨 * 10원
-        // 체력 무한으로 증가 가능 레벨당 50 증가 레벨 * 10원
-        // 스피드 10레벨 만렙 레벨당 0.1포인트 증가 레벨 * 1,000원
+        // 공격력 무한으로 증가 가능 레벨당 10 증가 레벨 * 10골드
+        // 체력 무한으로 증가 가능 레벨당 50 증가 레벨 * 10골드
+        // 스피드 10레벨 만렙 레벨당 0.1포인트 증가 레벨 * 1,000골드
+        // 크리티컬 확률 5레벨 만렙 레벨당 1% 증가 레벨 * 5,000골드
+        // 크리티컬 데미지 5레벨 만렙 레벨당 5% 증가 레벨 * 10,000골드
+        // 부활 1회 50,000 골드
+        // 체력 회복량 증가 레벨당 50 증가 레벨 * 100골드
         if(language == "English"){
             stateLevelButtonTexts[0].text = "Attack Lv " + (stateLevelAtttack + 1) +"\n" + "Attack + " + (stateLevelAtttack + 1)*10 + "\n" + (stateLevelAtttack + 1)*10 + "Glod";
-            stateLevelButtonTexts[1].text = "Life Lv " + (stateLevelLife + 1) +"\n" + "Life + " + (stateLevelLife + 1)*50 + "\n" + (stateLevelLife + 1)*10 + "Glod";
+            stateLevelButtonTexts[1].text = "Health Lv " + (stateLevelLife + 1) +"\n" + "Health + " + (stateLevelLife + 1)*50 + "\n" + (stateLevelLife + 1)*10 + "Glod";
             if(stateLevelSpeed == 10){
                 stateLevelButtonTexts[2].text = "Speed Lv Max";
             } else {
                 stateLevelButtonTexts[2].text = "Speed Lv " + (stateLevelSpeed + 1) +"\n" + "Speed + " + (stateLevelSpeed + 1)*5 + "%" + "\n" + (stateLevelSpeed + 1)*1000 + "Glod";
             }
+            if(stateLevelCriticalChance == 5){
+                stateLevelButtonTexts[3].text = "Critical Chance Lv Max";
+            } else {
+                stateLevelButtonTexts[3].text = "Critical Chance Lv " + (stateLevelCriticalChance + 1) + "\n" + "Critical Chance + " + (stateLevelCriticalChance + 1) + "%" + "\n" + (stateLevelCriticalChance + 1)*5000 + "Glod";
+            }
+            if(stateLevelCriticalDamage == 5){
+                stateLevelButtonTexts[4].text = "Critical Damage Lv Max";
+            } else {
+                stateLevelButtonTexts[4].text = "Critical Damage Lv " + (stateLevelCriticalDamage + 1) + "\n" + "Critical Damage + " + ((stateLevelCriticalDamage + 1) * 5) + "%" + "\n" + (stateLevelCriticalDamage + 1)*10000 + "Gold";
+            }
+            if(stateLevelReLife == 1){
+                stateLevelButtonTexts[5].text = "Life Lv Max";
+            } else {
+                stateLevelButtonTexts[5].text = "Life Lv " + (stateLevelReLife + 1) + "\n" + "Life + " + (stateLevelReLife + 1) + "\n" + (stateLevelReLife + 1) * 50000 + "Gold";
+            }
+            stateLevelButtonTexts[6].text = "Amount of healing Lv " + (stateLevelLifeValue + 1) + "\n" + "Amount of healing + " + (stateLevelLifeValue + 1)*50 + "\n" + (stateLevelLifeValue + 1) * 100 + "Gold";
+
         } else if(language == "Korean") {
             stateLevelButtonTexts[0].text = "공격력 레벨 " + (stateLevelAtttack + 1) +"\n" + "공격력 + " + (stateLevelAtttack + 1)*10 + "\n" + (stateLevelAtttack + 1)*10 + "골드";
             stateLevelButtonTexts[1].text = "체력 레벨 " + (stateLevelLife + 1) + "\n" + "체력 + " + (stateLevelLife + 1)*50 + "\n" + (stateLevelLife + 1)*10 + "골드";
             if(stateLevelSpeed == 10){
                 stateLevelButtonTexts[2].text = "이동속도 최대 레벨";
             } else {
-                stateLevelButtonTexts[2].text = "이동속도 레벨 " + (stateLevelSpeed + 1) +"\n" + "이동속도 + " + (stateLevelSpeed + 1)*5 + "%" + "\n" + (stateLevelSpeed + 1)*1000 + "골드";
+                stateLevelButtonTexts[2].text = "이동속도 레벨 " + (stateLevelSpeed + 1) +"\n" + "이동속도 + " + (stateLevelSpeed + 1)*5 + "%" + "\n" + ((stateLevelSpeed + 1)*1000) + "골드";
             }
+            if(stateLevelCriticalChance == 5){
+                stateLevelButtonTexts[3].text = "크리티컬 확률 최대 레벨";
+            } else {
+                stateLevelButtonTexts[3].text = "크리티컬 확률 레벨 " + (stateLevelCriticalChance + 1) + "\n" + "크리티컬 확률 + " + (stateLevelCriticalChance + 1) + "%" + "\n" + (stateLevelCriticalChance + 1)*5000 + "골드";
+            }
+            if(stateLevelCriticalDamage == 5){
+                stateLevelButtonTexts[4].text = "크리티컬 데미지 최대 레벨";
+            } else {
+                stateLevelButtonTexts[4].text = "크리티컬 데미지 레벨 " + (stateLevelCriticalDamage + 1) + "\n" + "크리티컬 데미지 + " + ((stateLevelCriticalDamage + 1) * 5) + "%" + "\n" + (stateLevelCriticalDamage + 1)*10000 + "골드";
+            }
+            if(stateLevelReLife == 1){
+                stateLevelButtonTexts[5].text = "목숨 최대 레벨";
+            } else {
+                stateLevelButtonTexts[5].text = "목숨 레벨 " + (stateLevelReLife + 1) + "\n" + "부활 횟수 + " + (stateLevelReLife + 1) + "\n" + (stateLevelReLife + 1) * 50000 + "골드";
+            }
+            stateLevelButtonTexts[6].text = "힐량 레벨 " + (stateLevelLifeValue + 1) + "\n" + "힐량 + " + (stateLevelLifeValue + 1)*50 + "\n" + (stateLevelLifeValue + 1) * 100 + "골드";
         }
     }
     public void StateButton(int num)
@@ -437,6 +483,77 @@ public class MainManager : MonoBehaviour
             } else {
                 GoldLess();
             }
+        } else if(num == 4){ // 크리티컬 확률
+            if(stateLevelCriticalChance==5){
+                toastTextObj.SetActive(true);
+                if (language == "English") {
+                    toastText.text = "This is the maximum level.";
+                } else if (language == "Korean") {
+                    toastText.text = "최대 레벨 입니다.";
+                }
+                return;
+            }
+            if(grobalGold >= (stateLevelCriticalChance + 1)*5000){
+                grobalGold -= (stateLevelCriticalChance + 1)*5000;
+                stateLevelCriticalChance++;
+                PlayerPrefs.SetInt("StateLevelCriticalChance", stateLevelCriticalChance);
+                PlayerPrefs.SetInt("GrobalGold", grobalGold);
+                PlayerPrefs.Save();
+                StateLevelPanelButton();
+            } else {
+                GoldLess();
+            }
+        } else if(num == 5){ // 크리티컬 데미지
+            if(stateLevelCriticalDamage==5){
+                toastTextObj.SetActive(true);
+                if (language == "English") {
+                    toastText.text = "This is the maximum level.";
+                } else if (language == "Korean") {
+                    toastText.text = "최대 레벨 입니다.";
+                }
+                return;
+            }
+            if(grobalGold >= (stateLevelCriticalDamage + 1)*10000){
+                grobalGold -= (stateLevelCriticalDamage + 1)*10000;
+                stateLevelCriticalDamage++;
+                PlayerPrefs.SetInt("StateLevelCriticalDamage", stateLevelCriticalDamage);
+                PlayerPrefs.SetInt("GrobalGold", grobalGold);
+                PlayerPrefs.Save();
+                StateLevelPanelButton();
+            } else {
+                GoldLess();
+            }
+        } else if(num == 6){ // 목숨
+            if(stateLevelReLife==1){
+                toastTextObj.SetActive(true);
+                if (language == "English") {
+                    toastText.text = "This is the maximum level.";
+                } else if (language == "Korean") {
+                    toastText.text = "최대 레벨 입니다.";
+                }
+                return;
+            }
+            if(grobalGold >= (stateLevelReLife + 1)*50000){
+                grobalGold -= (stateLevelReLife + 1)*50000;
+                stateLevelReLife++;
+                PlayerPrefs.SetInt("StateLevelReLife", stateLevelReLife);
+                PlayerPrefs.SetInt("GrobalGold", grobalGold);
+                PlayerPrefs.Save();
+                StateLevelPanelButton();
+            } else {
+                GoldLess();
+            }
+        } else if(num == 7){ // 힐량
+            if(grobalGold >= (stateLevelLifeValue + 1)*50){
+                grobalGold -= (stateLevelLifeValue + 1)*50;
+                stateLevelLifeValue++;
+                PlayerPrefs.SetInt("StateLevelLifeValue", stateLevelLifeValue);
+                PlayerPrefs.SetInt("GrobalGold", grobalGold);
+                PlayerPrefs.Save();
+                StateLevelPanelButton();
+            } else {
+                GoldLess();
+            }
         }
     }
     void GoldLess()
@@ -452,96 +569,31 @@ public class MainManager : MonoBehaviour
     {
         helpPanel.SetActive(true);
     }
-    public void InventoryInfoOut()
-    {
-        inventoryInfoPanel.SetActive(false);
-    }
     public void InventoryPanelButton()
-    {
-        toastTextObj.SetActive(true);
-        if (language == "English")
-        {
-            toastText.text = "Not yet...";
+    {            
+        inventoryPanel.SetActive(true);
+        stateInfoImage.sprite = stateInfoCharacterImage[characterNum];
+        if(language == "English"){
+            stateInfoExText.text = "Bonus attack power : " + ((character=="Hunter4"? 2 : 1) * (stateLevelAtttack*10))
+                                    + "\nHealth : " + ((character=="Hunter2"? 2 : 1) * (1000 + stateLevelLife*50))
+                                    + "\nCritical Chance : " + (0 + stateLevelCriticalChance)+ "%"
+                                    + "\nCritical Damage : " + (150 + (stateLevelCriticalDamage*5))+ "%"
+                                    + "\nSpeed : " + ((character=="Hunter3"? 20 : 0) + (100 + (stateLevelSpeed*5))) +"%"
+                                    + "\nAttack speed : " + 1f + "Second"
+                                    + "\nAmount of Healing : " + ((character=="Hunter"? 2 : 1) * (200 + stateLevelLifeValue*50))
+                                    + "\nLife : " + (stateLevelReLife + 1);
+        } else if(language == "Korean"){
+            stateInfoExText.text = "추가 공격력 : " + ((character=="Hunter4"? 2 : 1) * (stateLevelAtttack*10))
+                                    + "\n체력 : " + ((character=="Hunter2"? 2 : 1) * (1000 + stateLevelLife*50))
+                                    + "\n크리티컬 확률 : " + (0 + stateLevelCriticalChance)+ "%"
+                                    + "\n크리티컬 데미지 : " + (150 + (stateLevelCriticalDamage*5))+ "%"
+                                    + "\n이동 속도 : " + ((character=="Hunter3"? 20 : 0) + (100 + (stateLevelSpeed*5))) +"%"
+                                    + "\n공격 속도 : " + 1f + "초"
+                                    + "\n체력 회복 : " + ((character=="Hunter"? 2 : 1) * (200 + stateLevelLifeValue*50))
+                                    + "\n목숨 : " + (stateLevelReLife + 1);
         }
-        else if (language == "Korean")
-        {
-            toastText.text = "업데이트 중입니다..";
-        }
+    }
 
-        //착용하고 있는것이 있다면 불러와서 장착
-        //if (PlayerPrefs.HasKey("Slut1")){
-            
-        //}
-        //inventoryPanel.SetActive(true);
-    }
-    public void InventoryInfo(string name)
-    {
-        //장비에 따른 이미지와 텍스트를 인포에 넣어준다. 현재 창에 띄워져 있는 아이템 이름을 함수로 받아와 장착 여부 확인 및 장착 해제 할 수 있게 해야 됨!
-        // 해당 아이템을 끼우고 있다면 아이템 해제 버튼, 아니라면 장비 버튼으로 바꿔야 함
-        switch(name){
-            case "Mag": //획득 반경 +1%
-                infoImage.sprite = infoImageSprite[0];
-                if(!PlayerPrefs.HasKey(name)){
-                    if(language=="English"){
-                        infoText.text = name + " " + "0";
-                        infoExText.text = "Haven't gotten the item yet.";
-                    } else if (language=="Korean"){
-                        infoText.text = "자석 " + "0";
-                        infoExText.text = "아직 획득하지 못하였습니다.";
-                    }
-                    curItem = "None";
-                } else {
-                    if(language=="English"){
-                        infoText.text = name + " " + PlayerPrefs.GetInt(name);
-                        infoExText.text = "Item acquisition radius is increased by "+ PlayerPrefs.GetInt(name)*100 +"%.";
-                    } else if (language=="Korean"){
-                        infoText.text = "자석 " + PlayerPrefs.GetInt(name);
-                        infoExText.text = "아이템 획득 반경이 " + PlayerPrefs.GetInt(name)*100 + "% 증가합니다.";
-                    }
-                    curItem = name;
-                }
-            break;
-            case "Power": // 데미지 +1
-
-            break;
-            case "Speed": // 이동 속도 +1%
-                
-            break;
-            case "Delay": // 딜레이 + 0.1%
-                
-            break;
-            case "BulletSizeUp": // 총알 크기 증가 0.1%
-                
-            break;
-            case "Penetrate": // 관통 +1
-                
-            break;
-            case "PlayerSizeDown": // 플레이어 크기 감소 0.1%
-                
-            break;
-            case "BossPlusDamage": // 정예, 보스 추가데미지 +1
-                
-            break;
-            case "BulletSpeed": // 총알 속도 + 0.1%
-                
-            break;
-        }
-        inventoryInfoPanel.SetActive(true);
-    }
-    public void EquipAndClearButton()
-    {
-        // 해당 아이템을 끼우고 있다면 아이템 해제 버튼, 아니라면 장비 버튼으로 실행
-        if(curItem=="None"){// 아이템이 없을 경우
-            if(language=="English"){
-                toastText.text = "No item.";
-            } else if(language=="Korean"){
-                toastText.text = "아이템이 없습니다.";
-            }
-            toastTextObj.SetActive(true);
-        } else if (curItem=="Mag"){ // 자석 아이템이라면
-            //빈 슬롯에 해당 아이템을 장착하고 저장
-        }
-    }
     //광고 함수
     /*private void RequestBanner()
     {

@@ -34,7 +34,7 @@ public class Item : MonoBehaviour
             return;
 
         if(other.gameObject.tag=="Mag" && !isMagnetOn){
-            if(!audioSource.isPlaying){
+            if(audioSource.clip != null && !audioSource.isPlaying && gameObject.activeSelf){
                 gameManager.audioManager.PlayOneShotSound(audioSource, audioSource.clip, audioSource.volume);
             }
             Vector2 nextPos = player.transform.position - transform.position;

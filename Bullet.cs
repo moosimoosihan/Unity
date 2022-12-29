@@ -54,10 +54,8 @@ public class Bullet : MonoBehaviour
     }
     void OnEnable()
     {
-        if(audioSource.clip != null){
-            if(!audioSource.isPlaying){
-                gameManager.audioManager.PlayOneShotSound(audioSource, audioSource.clip, audioSource.volume);
-            }
+        if(audioSource.clip != null && !audioSource.isPlaying && gameObject.activeSelf){
+            gameManager.audioManager.PlayOneShotSound(audioSource, audioSource.clip, audioSource.volume);
         }
         enemyForeceMax = false;
         deg = 0;
@@ -244,6 +242,7 @@ public class Bullet : MonoBehaviour
                 break;
             }
         } else if(other.gameObject.tag == "Enemy"){
+            EnemyMove enemyLogic = other.gameObject.GetComponent<EnemyMove>();
             if(elementalType=="Wind"){ // 바람의 경우 다른 원소와 닿으면 해당 원소를 흡수하여 해당 원소로 변경
                 if(weaponType == 6){ 
                     if(!windChangeOn){
@@ -362,7 +361,7 @@ public class Bullet : MonoBehaviour
     void TrapOn()
     {
         anim.SetTrigger("IsTrapOn");
-        Invoke("ActiveOff",0.9f);
+        Invoke("ActiveOff",0.8f);
     }
     void OnDisable()
     {
