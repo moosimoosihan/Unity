@@ -12,7 +12,6 @@ public class Background : MonoBehaviour
     //플레이어
     public GameObject player;
     PlayerMove playerLogic;
-    public ObjectManager objectManager;
 
     //타일 하나의 크기 = 5
     public float unitSizeX;

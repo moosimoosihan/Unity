@@ -258,7 +258,7 @@ public class PlayerMove : MonoBehaviour
         //체력이 0이면 죽는 에니메이션
         if(life <= 0 && playerDeadCount == 0 && !playerDead){
             
-            if(stateLevelReLife==1){ // 부활
+            if(stateLevelReLife>=1){ // 부활
                 stateLevelReLife--;
                 life = maxLife;
                 return;

@@ -2,9 +2,9 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
-using System.IO;
 using UnityEngine.SceneManagement;
 using Cinemachine;
+using UnityEngine.Advertisements;
 
 public class GameManager : MonoBehaviour
 {
@@ -12,9 +12,6 @@ public class GameManager : MonoBehaviour
     public bool stageEnd;
     public ObjectManager objectManager;
     public Spawner spawner;
-
-    //광고 함수
-    public AdmobVideoScript adManager;
 
     //언어 함수
     public string language;
@@ -779,10 +776,6 @@ public class GameManager : MonoBehaviour
     {
         pauseButton.SetActive(false);
         playerDeadChancePanel.SetActive(true);
-    }
-    public void ResurrectionButton()
-    {
-        adManager.Show();
     }
     void StageClear()
     {
